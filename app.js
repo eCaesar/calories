@@ -233,7 +233,7 @@ function searchOffDb(q, limit = 40) {
   const words = norm(q).split(/\s+/).filter(Boolean);
   const res = [];
   for (let i = 0; i < offNorm.length && res.length < limit; i++) {
-    if (words.every((w) => offNorm[i].includes(w))) res.push(offRow(i));
+    if (offDb[i][3] != null && words.every((w) => offNorm[i].includes(w))) res.push(offRow(i));
   }
   return res;
 }
@@ -271,7 +271,13 @@ async function lookupBarcode(code) {
   if (shared) return openPortion(shared);
   if (offCache[code]) return openPortion(offCache[code]);
   await loadOffDb();
-  if (offByCode.has(code)) return openPortion(offRow(offByCode.get(code)));
+  if (offByCode.has(code)) {
+    const food = offRow(offByCode.get(code));
+    if (food.kcal != null) return openPortion(food);
+    // Товар известен, но без пищевой ценности: просим один раз переписать с упаковки
+    toast('Товар найден, но без калорий. Перепишите их с упаковки один раз');
+    return openProductForm({ code, name: food.name });
+  }
   toast('Ищу товар…');
   try {
     const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=${OFF_FIELDS}`);

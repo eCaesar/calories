@@ -34,8 +34,8 @@ jobs:
       - name: Собрать базу из Open Food Facts
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
-          curl -fsSL https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz \
-            | gunzip | python3 scripts/build_off_ru.py
+          pip install -q duckdb
+          python3 scripts/build_off_ru.py
           ls -lh data/
 
       - name: Подготовить сайт
