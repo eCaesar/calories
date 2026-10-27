@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2e7d5b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Калории">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Калории</title>
+<style>
+:root{--bg:#f5f6f4;--card:#fff;--text:#1d2420;--muted:#6b756f;--accent:#2e7d5b;--accent2:#e8f3ee;--line:#e3e6e3;--danger:#c0392b}
+@media (prefers-color-scheme:dark){:root{--bg:#121513;--card:#1c211e;--text:#e8ece9;--muted:#98a39c;--accent:#4fb487;--accent2:#20302a;--line:#2c332f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env(safe-area-inset-top) + 8px) 16px 8px;display:flex;align-items:center;gap:8px}
+header h1{font-size:18px;margin:0;flex:1;text-align:center}
+main{padding:0 16px calc(env(safe-area-inset-bottom) + 90px);max-width:560px;margin:0 auto}
+button{font:inherit;border:0;border-radius:12px;padding:10px 14px;background:var(--accent2);color:var(--text);cursor:pointer}
+button.primary{background:var(--accent);color:#fff}
+button.icon{padding:8px 12px;background:transparent;font-size:20px}
+button.danger{color:var(--danger);background:transparent}
+input,select{font:inherit;width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text)}
+.card{background:var(--card);border-radius:16px;padding:14px;margin:10px 0;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.summary .kcal{font-size:30px;font-weight:700}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:8px 0}
+.bar>i{display:block;height:100%;background:var(--accent)}
+.bar.over>i{background:var(--danger)}
+.macros{display:flex;justify-content:space-between;color:var(--muted);font-size:14px}
+.meal h2{font-size:16px;margin:0;display:flex;justify-content:space-between;align-items:center}
+.meal h2 span{color:var(--muted);font-weight:400;font-size:14px}
+.row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.row .name{flex:1;min-width:0}
+.row .name small{display:block;color:var(--muted)}
+.row .val{white-space:nowrap;color:var(--muted);font-size:14px}
+.add-btn{width:100%;margin-top:8px}
+.fab{position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom) + 16px);display:flex;gap:10px}
+.fab button{border-radius:28px;padding:14px 20px;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.sheet{position:fixed;inset:0;background:var(--bg);z-index:20;display:none;flex-direction:column}
+.sheet.open{display:flex}
+.sheet .body{flex:1;overflow:auto;padding:0 16px 24px;max-width:560px;width:100%;margin:0 auto}
+.tabs{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap}
+.tabs button{padding:6px 12px;font-size:14px}
+.tabs button.on{background:var(--accent);color:#fff}
+.result{cursor:pointer}
+.muted{color:var(--muted);font-size:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:14px;color:var(--muted);margin:10px 0 4px}
+#video{width:100%;border-radius:16px;background:#000;aspect-ratio:3/4;object-fit:cover}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chips button{padding:6px 10px;font-size:14px}
+.big{font-size:22px;font-weight:700}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#333;color:#fff;padding:10px 16px;border-radius:12px;z-index:50;display:none}
+</style>
+</head>
+<body>
+<header>
+  <button class="icon" id="prevDay" aria-label="Предыдущий день">‹</button>
+  <h1 id="dayTitle">Сегодня</h1>
+  <button class="icon" id="nextDay" aria-label="Следующий день">›</button>
+  <button class="icon" id="openSettings" aria-label="Настройки">⚙︎</button>
+</header>
+<main id="diary"></main>
+<div class="fab">
+  <button class="primary" id="fabScan">📷 Штрихкод</button>
+  <button class="primary" id="fabAdd">＋ Еда</button>
+</div>
+
+<!-- Поиск -->
+<section class="sheet" id="searchSheet">
+  <header><button class="icon" data-close>✕</button><h1>Добавить еду</h1><button class="icon" id="scanFromSearch">📷</button></header>
+  <div class="body">
+    <select id="mealSelect"></select>
+    <div style="height:8px"></div>
+    <input id="q" type="search" placeholder="Название продукта, например «творог»" autocomplete="off">
+    <div class="tabs" id="srcTabs">
+      <button data-src="all" class="on">Все</button>
+      <button data-src="recent">Недавние</button>
+      <button data-src="frequent">Частые</button>
+      <button data-src="mine">Мои</button>
+    </div>
+    <div id="results"></div>
+    <button class="add-btn" id="newProduct">＋ Создать свой продукт</button>
+  </div>
+</section>
+
+<!-- Порция -->
+<section class="sheet" id="portionSheet">
+  <header><button class="icon" data-close>✕</button><h1>Порция</h1><span style="width:44px"></span></header>
+  <div class="body">
+    <div class="card">
+      <div class="big" id="pName"></div>
+      <div class="muted" id="pPer100"></div>
+    </div>
+    <label>Сколько граммов (мл)</label>
+    <input id="pGrams" type="number" inputmode="decimal" min="0" step="1">
+    <div class="chips" id="pChips"></div>
+    <div class="card"><div class="kcal big" id="pKcal"></div><div class="macros" id="pMacros"></div></div>
+    <label>Приём пищи</label>
+    <select id="pMeal"></select>
+    <div style="height:12px"></div>
+    <button class="primary add-btn" id="pSave">Добавить</button>
+    <button class="danger add-btn" id="pDelete" style="display:none">Удалить запись</button>
+  </div>
+</section>
+
+<!-- Свой продукт -->
+<section class="sheet" id="productSheet">
+  <header><button class="icon" data-close>✕</button><h1>Свой продукт</h1><span style="width:44px"></span></header>
+  <div class="body">
+    <label>Название</label><input id="fName">
+    <label>Штрихкод (если есть)</label><input id="fCode" inputmode="numeric">
+    <p class="muted">Пищевая ценность на 100 г — смотрите на упаковке.</p>
+    <div class="grid2">
+      <div><label>Ккал</label><input id="fKcal" type="number" inputmode="decimal"></div>
+      <div><label>Белки, г</label><input id="fP" type="number" inputmode="decimal"></div>
+      <div><label>Жиры, г</label><input id="fF" type="number" inputmode="decimal"></div>
+      <div><label>Углеводы, г</label><input id="fC" type="number" inputmode="decimal"></div>
+    </div>
+    <label>Вес порции/упаковки, г (необязательно)</label><input id="fServing" type="number" inputmode="decimal">
+    <label style="display:flex;gap:8px;align-items:center;color:var(--text)"><input type="checkbox" id="fShare" style="width:auto" checked> Отправить в общую базу, чтобы товар нашёлся у всех</label>
+    <p class="muted" id="fShareHint"></p>
+    <div style="height:12px"></div>
+    <button class="primary add-btn" id="fSave">Сохранить</button>
+  </div>
+</section>
+
+<!-- Сканер -->
+<section class="sheet" id="scanSheet">
+  <header><button class="icon" data-close>✕</button><h1>Наведите на штрихкод</h1><span style="width:44px"></span></header>
+  <div class="body">
+    <video id="video" playsinline muted></video>
+    <p class="muted" id="scanStatus">Запускаю камеру…</p>
+    <label>Или введите цифры вручную</label>
+    <div style="display:flex;gap:8px"><input id="manualCode" inputmode="numeric" placeholder="4600000000000"><button class="primary" id="manualGo">Найти</button></div>
+  </div>
+</section>
+
+<!-- Настройки -->
+<section class="sheet" id="settingsSheet">
+  <header><button class="icon" data-close>✕</button><h1>Настройки</h1><span style="width:44px"></span></header>
+  <div class="body">
+    <label>Цель, ккал в день</label><input id="sGoal" type="number" inputmode="numeric">
+    <div class="card">
+      <b>Общая база товаров</b>
+      <p class="muted">Новые товары со штрихкодом можно отправлять в Open Food Facts — тогда их увидят все, включая вашу семью. Нужен бесплатный аккаунт: <a href="https://world.openfoodfacts.org/cgi/user.pl" target="_blank" rel="noopener">регистрация</a>.</p>
+      <label>Логин Open Food Facts</label><input id="sOffUser" autocomplete="username">
+      <label>Пароль</label><input id="sOffPass" type="password" autocomplete="current-password">
+    </div>
+    <button class="primary add-btn" id="sSave">Сохранить</button>
+    <div class="card">
+      <b>Резервная копия</b>
+      <p class="muted">Все данные хранятся только на этом телефоне. Сохраните копию, чтобы перенести на другое устройство.</p>
+      <button class="add-btn" id="exportBtn">Скачать копию</button>
+      <button class="add-btn" id="importBtn">Загрузить копию</button>
+      <input type="file" id="importFile" accept="application/json" hidden>
+    </div>
+    <p class="muted">Данные о товарах по штрихкоду — <a href="https://ru.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> (ODbL). Если товара нет, создайте его — он запомнится.</p>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+<script src="foods.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

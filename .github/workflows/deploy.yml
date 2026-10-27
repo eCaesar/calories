@@ -1,0 +1,61 @@
+name: Сборка базы и публикация
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 3 * * 1" # раз в неделю обновляем базу товаров
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Номер недели
+        id: week
+        run: echo "week=$(date +%G-%V)" >> "$GITHUB_OUTPUT"
+
+      - name: Кэш базы товаров (на неделю)
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: data/off-ru.json
+          key: off-ru-${{ hashFiles('scripts/build_off_ru.py') }}-${{ steps.week.outputs.week }}
+
+      - name: Собрать базу из Open Food Facts
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          curl -fsSL https://static.openfoodfacts.org/data/en.openfoodfacts.org.products.csv.gz \
+            | gunzip | python3 scripts/build_off_ru.py
+          ls -lh data/
+
+      - name: Подготовить сайт
+        run: |
+          mkdir -p _site/data
+          cp index.html app.js foods.js manifest.json sw.js icon.svg icon-192.png icon-512.png _site/
+          cp data/off-ru.json _site/data/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
