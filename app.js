@@ -66,49 +66,51 @@ function fillMealSelect(sel, value) {
 }
 
 // ---------- Дневник ----------
-const MEAL_TONES = { breakfast: 'var(--m1)', lunch: 'var(--m2)', dinner: 'var(--m3)', snack: 'var(--m4)' };
-function macroRow(name, val, goal) {
-  // Шкала до 150% цели, засечка — цель
-  const max = goal * 1.5;
-  return `<div class="macro"><span>${name}</span>
-    <div class="mbar"><i class="${val > goal ? 'over' : ''}" style="width:${Math.min(100, (val / max) * 100)}%"></i><u style="left:${(goal / max) * 100}%"></u></div>
-    <span class="mono"><b>${r0(val)}</b> / ${goal} г</span></div>`;
+// Иконки приёмов пищи: контур + полупрозрачная заливка (класс d)
+const MEAL_ICONS = {
+  breakfast: '<path class="d" d="M5 10h11v4a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M5 10h11v4a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5zM16 11.5h1.5a2.5 2.5 0 0 1 0 5H15.5M8.5 3.5c-.8 1 .8 2 0 3.5M12.5 3.5c-.8 1 .8 2 0 3.5"/>',
+  lunch: '<path class="d" d="M3 11h18a9 9 0 0 1-18 0z"/><path d="M3 11h18a9 9 0 0 1-18 0zM9 20.5h6M10 8c0-1.5 1.5-1.5 1.5-3.5M14 8c0-1.2 1.2-1.2 1.2-2.8"/>',
+  dinner: '<path class="d" d="M19.5 14.5A8 8 0 1 1 9.5 4.5a6.5 6.5 0 0 0 10 10z"/><path d="M19.5 14.5A8 8 0 1 1 9.5 4.5a6.5 6.5 0 0 0 10 10zM17 3.5v3M15.5 5h3"/>',
+  snack: '<path class="d" d="M12 8c-2-1.5-7-1.5-7 3.5 0 4.5 3 9 5 9 1 0 1.3-.5 2-.5s1 .5 2 .5c2 0 5-4.5 5-9C19 6.5 14 6.5 12 8z"/><path d="M12 8c-2-1.5-7-1.5-7 3.5 0 4.5 3 9 5 9 1 0 1.3-.5 2-.5s1 .5 2 .5c2 0 5-4.5 5-9C19 6.5 14 6.5 12 8zM12 8c0-2 .8-3.6 2.5-4.5"/>',
+};
+const MACRO_TONES = { p: '#ffd38a', f: '#ffb39a', c: '#a8ead9' };
+function macroPill(name, val, goal, tone) {
+  return `<div class="mpill"><div class="t">${name}</div><div class="v mono">${r0(val)} <small>/ ${goal} г</small></div>
+    <div class="mbar" style="--mc:${tone}"><i class="${val > goal ? 'over' : ''}" style="width:${Math.min(100, (val / goal) * 100)}%"></i></div></div>`;
 }
 function renderDiary() {
   $('dayTitle').textContent = dayTitle(day);
   const [yy, mm, dd] = day.split('-').map(Number);
-  $('dayDate').textContent = new Date(yy, mm - 1, dd).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '');
+  const dateStr = new Date(yy, mm - 1, dd).toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('dayDate').textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
   const list = diary[day] || [];
   const kcalOf = (items) => items.reduce((s, e) => s + calc(e, e.grams).kcal, 0);
   const tot = list.reduce((a, e) => { const v = calc(e, e.grams); a.kcal += v.kcal; a.p += v.p; a.f += v.f; a.c += v.c; return a; }, { kcal: 0, p: 0, f: 0, c: 0 });
   const goal = settings.goal;
   const left = goal - tot.kcal;
-  // Линейка: шкала до max(цель×1.25, съедено), засечки каждые 250 ккал
-  const scale = Math.max(goal * 1.25, tot.kcal);
-  const pct = (v) => (v / scale) * 100;
-  let x = 0, segs = '', legend = '';
-  for (const [mk, mn] of MEALS) {
-    const k = kcalOf(list.filter((e) => e.meal === mk));
-    const inGoal = Math.max(0, Math.min(k, goal - x));
-    if (inGoal > 0) segs += `<div class="seg" style="left:${pct(x)}%;width:${pct(inGoal)}%;background:${MEAL_TONES[mk]}"></div>`;
-    x += k;
-    if (k > 0) legend += `<span class="cap"><i style="background:${MEAL_TONES[mk]}"></i>${mn} ${r0(k)}</span>`;
-  }
-  if (tot.kcal > goal) segs += `<div class="overseg" style="left:${pct(goal)}%;width:${pct(tot.kcal - goal)}%"></div>`;
+  const share = Math.min(100, (tot.kcal / goal) * 100);
   // Ориентиры БЖУ: 20% / 30% / 50% калорий
   const gp = r0((goal * 0.2) / 4), gf = r0((goal * 0.3) / 9), gc = r0((goal * 0.5) / 4);
-  let html = `<div class="eq mono"><span><b>${goal}</b> цель</span><span>−</span><span><b>${r0(tot.kcal)}</b> съедено</span><span>=</span></div>
-    <div class="left ${left < 0 ? 'over' : ''}"><span class="n mono">${r0(Math.abs(left))}</span><span class="cap">${left >= 0 ? 'ккал осталось' : 'ккал сверх нормы'}</span></div>
-    <div class="ruler" style="--tick:${pct(250)}%"><div class="track"></div>${segs}<div class="target" style="left:calc(${pct(goal)}% - 1px)"></div></div>
-    <div class="legend">${legend || '<span class="cap">Пока ничего не съедено</span>'}</div>
-    ${macroRow('Белки', tot.p, gp)}${macroRow('Жиры', tot.f, gf)}${macroRow('Углеводы', tot.c, gc)}`;
+  const arc = 'M20 120 A100 100 0 0 1 220 120';
+  let html = `<section class="hero ${left < 0 ? 'over' : ''}">
+    <div class="gauge"><svg viewBox="0 0 240 132" aria-hidden="true">
+      <path class="trk" d="${arc}" fill="none" stroke-width="16" stroke-linecap="round"/>
+      ${share > 0 ? `<path class="val" d="${arc}" pathLength="100" fill="none" stroke-width="16" stroke-linecap="round" stroke-dasharray="${share} 100"/>` : ''}
+    </svg>
+    <div class="mid"><div class="n mono">${r0(Math.abs(left))}</div><div class="l">${left >= 0 ? 'ккал осталось' : 'ккал сверх нормы'}</div></div></div>
+    <div class="ends"><div><span>Съедено</span><b class="mono">${r0(tot.kcal)}</b></div><div><span>Цель</span><b class="mono">${goal}</b></div></div>
+    <div class="macros">${macroPill('Белки', tot.p, gp, MACRO_TONES.p)}${macroPill('Жиры', tot.f, gf, MACRO_TONES.f)}${macroPill('Углеводы', tot.c, gc, MACRO_TONES.c)}</div>
+  </section>`;
   for (const [mk, mn] of MEALS) {
     const items = list.filter((e) => e.meal === mk);
-    html += `<section class="meal"><div class="meal-h"><span class="cap">${mn}</span><span class="k mono">${items.length ? r0(kcalOf(items)) + ' ккал' : ''}</span></div>`;
+    html += `<section class="meal" style="--mc:var(--c-${mk})"><div class="meal-h">
+      <span class="meal-ic"><svg class="i" viewBox="0 0 24 24">${MEAL_ICONS[mk]}</svg></span>
+      <div class="meal-t"><b>${mn}</b><span class="mono">${items.length ? r0(kcalOf(items)) + ' ккал' : 'Пока ничего'}</span></div>
+      <button class="meal-add" data-addmeal="${mk}" aria-label="Добавить в ${mn.toLowerCase()}"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>`;
     for (const e of items) {
-      html += `<div class="row result" data-entry="${e.id}"><div class="name">${esc(e.name)}${e.brand ? `<small>${esc(e.brand)}</small>` : ''}</div><span class="g mono">${r0(e.grams)} г</span><span class="val mono">${r0(calc(e, e.grams).kcal)}</span></div>`;
+      html += `<div class="row result" data-entry="${e.id}"><div class="name">${esc(e.name)}${e.brand ? `<small>${esc(e.brand)}</small>` : ''}</div><span class="val mono">${r0(calc(e, e.grams).kcal)} ккал<small>${r0(e.grams)} г</small></span></div>`;
     }
-    html += `<button class="meal-add" data-addmeal="${mk}"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Добавить</button></section>`;
+    html += `</section>`;
   }
   $('diary').innerHTML = html;
 }
@@ -163,7 +165,7 @@ function matchLocal(list, q) {
 function resultRow(f) {
   const tag = f.src === 'mine' ? ' · мой' : '';
   const sub = f.brand ? esc(f.brand) + tag : tag.slice(3);
-  return `<div class="row result" data-key="${esc(f.key)}"><div class="name">${esc(f.name)}${sub ? `<small>${sub}</small>` : ''}</div><span class="val mono">${r0(f.kcal)}</span></div>`;
+  return `<div class="row result" data-key="${esc(f.key)}"><div class="name">${esc(f.name)}${sub ? `<small>${sub}</small>` : ''}</div><span class="val mono">${r0(f.kcal)} ккал<small>в 100 г</small></span></div>`;
 }
 let shown = new Map();
 function showResults(groups) {
@@ -174,7 +176,7 @@ function showResults(groups) {
     if (title) html += `<p class="cap muted">${title}</p>`;
     html += '<div class="group">' + items.map((f) => { shown.set(f.key, f); return resultRow(f); }).join('') + '</div>';
   }
-  $('results').innerHTML = html ? '<p class="cap muted" style="text-align:right;margin:10px 0 -18px">ккал / 100 г</p>' + html : '<p class="muted">Ничего не найдено. Создайте свой продукт, он запомнится.</p>';
+  $('results').innerHTML = html ? html : '<p class="muted">Ничего не найдено. Создайте свой продукт, он запомнится.</p>';
 }
 function runSearch() {
   const q = $('q').value;
@@ -303,7 +305,7 @@ function openPortion(food, entry) {
   portionFood = food;
   editingEntry = entry || null;
   $('pName').textContent = food.name + (food.brand ? ' · ' + food.brand : '');
-  $('pPer100').textContent = `100 г — ${r0(food.kcal)} ккал · Б ${r1(food.p)} · Ж ${r1(food.f)} · У ${r1(food.c)}`;
+  $('pPer100').textContent = `В 100 г: ${r0(food.kcal)} ккал · Б ${r1(food.p)} · Ж ${r1(food.f)} · У ${r1(food.c)}`;
   $('pGrams').value = entry ? entry.grams : food.lastGrams || food.serving || 100;
   const chips = [50, 100, 150, 200, 250];
   if (food.serving && !chips.includes(food.serving)) chips.unshift(food.serving);
@@ -317,7 +319,7 @@ function openPortion(food, entry) {
 function updatePortion() {
   const v = calc(portionFood, +$('pGrams').value || 0);
   $('pKcal').textContent = r0(v.kcal);
-  $('pMacros').innerHTML = `<span>Б <b>${r1(v.p)}</b></span><span>Ж <b>${r1(v.f)}</b></span><span>У <b>${r1(v.c)}</b></span>`;
+  $('pMacros').innerHTML = `<span><b>${r1(v.p)}</b>белки, г</span><span><b>${r1(v.f)}</b>жиры, г</span><span><b>${r1(v.c)}</b>углеводы, г</span>`;
 }
 $('pGrams').addEventListener('input', updatePortion);
 $('pChips').addEventListener('click', (ev) => {
