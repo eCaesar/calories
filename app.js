@@ -66,25 +66,42 @@ function fillMealSelect(sel, value) {
 }
 
 // ---------- Дневник ----------
+const MEAL_ICONS = { breakfast: '🍳', lunch: '🍲', dinner: '🍽️', snack: '🍎' };
+function macroBar(name, color, val, goal) {
+  return `<div class="macro"><div class="top"><span><i class="dot" style="background:${color}"></i>${name}</span><b>${r0(val)} / ${goal} г</b></div>
+    <div class="mbar"><i style="width:${Math.min(100, (val / goal) * 100)}%;background:${color}"></i></div></div>`;
+}
 function renderDiary() {
   $('dayTitle').textContent = dayTitle(day);
   const list = diary[day] || [];
   const tot = list.reduce((a, e) => { const v = calc(e, e.grams); a.kcal += v.kcal; a.p += v.p; a.f += v.f; a.c += v.c; return a; }, { kcal: 0, p: 0, f: 0, c: 0 });
-  const pct = Math.min(100, (tot.kcal / settings.goal) * 100);
-  const left = settings.goal - tot.kcal;
+  const goal = settings.goal;
+  const left = goal - tot.kcal;
+  const R = 56, C = 2 * Math.PI * R, frac = Math.min(1, tot.kcal / goal);
+  const ringColor = left < 0 ? 'var(--danger)' : 'url(#g)';
+  // Ориентиры БЖУ: 20% / 30% / 50% калорий
+  const gp = r0((goal * 0.2) / 4), gf = r0((goal * 0.3) / 9), gc = r0((goal * 0.5) / 4);
   let html = `<div class="card summary">
-    <div class="kcal">${r0(tot.kcal)} <span class="muted">из ${settings.goal} ккал</span></div>
-    <div class="bar ${left < 0 ? 'over' : ''}"><i style="width:${pct}%"></i></div>
-    <div class="macros"><span>Б ${r0(tot.p)} г</span><span>Ж ${r0(tot.f)} г</span><span>У ${r0(tot.c)} г</span>
-    <span>${left >= 0 ? 'осталось ' + r0(left) : 'перебор ' + r0(-left)}</span></div></div>`;
+    <div class="ring"><svg width="132" height="132" viewBox="0 0 132 132">
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent-2)"/></linearGradient></defs>
+      <circle cx="66" cy="66" r="${R}" fill="none" stroke="var(--line)" stroke-width="12"/>
+      <circle cx="66" cy="66" r="${R}" fill="none" stroke="${ringColor}" stroke-width="12" stroke-linecap="round"
+        stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - frac)}" style="transition:stroke-dashoffset .6s"/></svg>
+      <div class="center"><b>${r0(Math.abs(left))}</b><span>${left >= 0 ? 'ккал осталось' : 'ккал сверх'}</span></div></div>
+    <div class="stats">
+      <div class="stat"><span>Съедено</span><b>${r0(tot.kcal)} из ${goal}</b></div>
+      ${macroBar('Белки', 'var(--prot)', tot.p, gp)}${macroBar('Жиры', 'var(--fat)', tot.f, gf)}${macroBar('Углеводы', 'var(--carb)', tot.c, gc)}
+    </div></div>`;
   for (const [mk, mn] of MEALS) {
     const items = list.filter((e) => e.meal === mk);
     const kcal = items.reduce((s, e) => s + calc(e, e.grams).kcal, 0);
-    html += `<div class="card meal"><h2>${mn}<span>${r0(kcal)} ккал</span></h2>`;
+    html += `<div class="card meal"><div class="meal-h"><div class="meal-ico">${MEAL_ICONS[mk]}</div>
+      <div class="t"><b>${mn}</b><span>${items.length ? r0(kcal) + ' ккал' : 'пока пусто'}</span></div>
+      <button class="meal-add" data-addmeal="${mk}" aria-label="Добавить">＋</button></div>`;
     for (const e of items) {
-      html += `<div class="row result" data-entry="${e.id}"><div class="name">${esc(e.name)}<small>${r0(e.grams)} г${e.brand ? ' · ' + esc(e.brand) : ''}</small></div><div class="val">${r0(calc(e, e.grams).kcal)} ккал</div></div>`;
+      html += `<div class="row result" data-entry="${e.id}"><div class="name">${esc(e.name)}<small>${r0(e.grams)} г${e.brand ? ' · ' + esc(e.brand) : ''}</small></div><div class="val">${r0(calc(e, e.grams).kcal)} <small>ккал</small></div></div>`;
     }
-    html += `<button class="add-btn" data-addmeal="${mk}">＋ Добавить</button></div>`;
+    html += `</div>`;
   }
   $('diary').innerHTML = html;
 }
@@ -122,16 +139,23 @@ function setSrc(src) {
 }
 document.querySelectorAll('#srcTabs button').forEach((b) => (b.onclick = () => setSrc(b.dataset.src)));
 
+// Выше — совпадения с начала названия, затем с начала слова, затем внутри слова
+function rank(name, w) {
+  const n = norm(name);
+  if (n.startsWith(w)) return 0;
+  if (new RegExp('(^|[\\s,(«"-])' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(n)) return 1;
+  return 2;
+}
 function matchLocal(list, q) {
   const words = norm(q).split(/\s+/).filter(Boolean);
   if (!words.length) return list;
   return list
     .filter((f) => { const n = norm(f.name + ' ' + (f.brand || '')); return words.every((w) => n.includes(w)); })
-    .sort((a, b) => norm(a.name).indexOf(words[0]) - norm(b.name).indexOf(words[0]));
+    .sort((a, b) => rank(a.name, words[0]) - rank(b.name, words[0]));
 }
 function resultRow(f) {
-  const tag = f.src === 'mine' ? ' · мой' : f.src === 'off' ? ' · OFF' : '';
-  return `<div class="row result" data-key="${esc(f.key)}"><div class="name">${esc(f.name)}<small>${f.brand ? esc(f.brand) + ' · ' : ''}${r0(f.kcal)} ккал / 100 г${tag}</small></div></div>`;
+  const tag = f.src === 'mine' ? ' · мой' : '';
+  return `<div class="row result" data-key="${esc(f.key)}"><div class="name">${esc(f.name)}<small>${f.brand ? esc(f.brand) + tag : tag.slice(3) || 'на 100 г'}</small></div><div class="val">${r0(f.kcal)} <small>ккал</small></div></div>`;
 }
 let shown = new Map();
 function showResults(groups) {
@@ -285,7 +309,7 @@ function openPortion(food, entry) {
 function updatePortion() {
   const v = calc(portionFood, +$('pGrams').value || 0);
   $('pKcal').textContent = r0(v.kcal) + ' ккал';
-  $('pMacros').innerHTML = `<span>Б ${r1(v.p)} г</span><span>Ж ${r1(v.f)} г</span><span>У ${r1(v.c)} г</span>`;
+  $('pMacros').innerHTML = `<span><i class="dot" style="background:var(--prot)"></i>Б ${r1(v.p)}</span><span><i class="dot" style="background:var(--fat)"></i>Ж ${r1(v.f)}</span><span><i class="dot" style="background:var(--carb)"></i>У ${r1(v.c)}</span>`;
 }
 $('pGrams').addEventListener('input', updatePortion);
 $('pChips').addEventListener('click', (ev) => {
