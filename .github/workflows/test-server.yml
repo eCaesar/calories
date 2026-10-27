@@ -19,6 +19,7 @@ jobs:
       - name: Регистрация, дневник и общая база
         run: |
           set -e
+          trap 'echo "::error::Упала команда: ${BASH_COMMAND:0:300}"' ERR
           api() { curl -sS -f -H "Content-Type: application/json" ${TOKEN:+-H "Authorization: $TOKEN"} "$@"; }
           B=http://127.0.0.1:8090/api/collections
           api -X POST $B/users/records -d '{"email":"a@ex.ru","password":"password1","passwordConfirm":"password1"}'
@@ -36,4 +37,6 @@ jobs:
           ! api -X DELETE $B/entries/records/abcdefghij12345
           echo "Все проверки прошли"
       - if: failure()
-        run: cat pb.log
+        run: |
+          cat pb.log
+          echo "::error::pb.log: $(tail -c 600 pb.log | tr '\n' ' ')"
