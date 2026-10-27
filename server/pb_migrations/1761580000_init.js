@@ -17,10 +17,12 @@ migrate((db) => {
       text("name", 200, true),
       text("brand", 80),
       text("code", 32),
+      // название и бренд в нижнем регистре: SQLite не умеет без учёта регистра искать по кириллице
+      text("search", 300),
       num("kcal", 1000), num("p", 1000), num("f", 1000), num("c", 1000), num("serving", 10000),
       { name: "author", type: "relation", required: true, options: { collectionId: users.id, maxSelect: 1, cascadeDelete: false } },
     ],
-    indexes: ["CREATE INDEX idx_foods_code ON foods (code)", "CREATE INDEX idx_foods_name ON foods (name)"],
+    indexes: ["CREATE INDEX idx_foods_code ON foods (code)", "CREATE INDEX idx_foods_search ON foods (search)"],
     listRule: "@request.auth.id != ''",
     viewRule: "@request.auth.id != ''",
     createRule: "@request.auth.id != '' && author = @request.auth.id",

@@ -145,9 +145,9 @@ const Sync = (() => {
   const esc = (s) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   async function searchFoods(q) {
     if (!loggedIn() || !available()) return [];
-    const words = q.trim().split(/\s+/).filter(Boolean).slice(0, 4);
+    const words = q.toLowerCase().replace(/ё/g, 'е').trim().split(/\s+/).filter(Boolean).slice(0, 4);
     if (!words.length) return [];
-    const filter = encodeURIComponent(words.map((w) => `(name ~ "${esc(w)}" || brand ~ "${esc(w)}")`).join(' && '));
+    const filter = encodeURIComponent(words.map((w) => `search ~ "${esc(w)}"`).join(' && '));
     try {
       const r = await api(`/api/collections/foods/records?filter=${filter}&perPage=30&skipTotal=1&sort=name`);
       return r.items.map(fromFood);
@@ -162,7 +162,8 @@ const Sync = (() => {
   }
   async function shareFood(food) {
     if (!loggedIn() || !available()) return null;
-    const body = { name: food.name, brand: food.brand || '', code: food.code || '', kcal: food.kcal, p: food.p, f: food.f, c: food.c,
+    const search = `${food.name} ${food.brand || ''}`.toLowerCase().replace(/ё/g, 'е').trim();
+    const body = { name: food.name, brand: food.brand || '', code: food.code || '', search, kcal: food.kcal, p: food.p, f: food.f, c: food.c,
       serving: food.serving || 0, author: auth.user.id };
     try { return fromFood(await api('/api/collections/foods/records', { method: 'POST', body })); } catch { return null; }
   }

@@ -29,11 +29,11 @@ jobs:
           api -X PATCH $B/users/records/$UID_A -d '{"goal":1800}' | jq -e '.goal == 1800'
           api -X POST $B/entries/records -d "{\"id\":\"abcdefghij12345\",\"user\":\"$UID_A\",\"day\":\"2026-10-27\",\"meal\":\"lunch\",\"grams\":250,\"name\":\"Борщ\",\"kcal\":49,\"p\":1.1,\"f\":2.2,\"c\":6.7}"
           api -X PATCH $B/entries/records/abcdefghij12345 -d '{"grams":300}' | jq -e '.grams == 300'
-          api "$B/entries/records?filter=$(jq -rn --arg f 'day >= "2026-10-01" && day <= "2026-10-31"' '$f|@uri')" | jq -e '.items | length == 1'
-          api -X POST $B/foods/records -d "{\"name\":\"Пирог бабушкин\",\"kcal\":320,\"code\":\"4600000000123\",\"author\":\"$UID_A\"}"
+          api "$B/entries/records?filter=$(jq -rn --arg f 'day >= "2026-10-01" && day <= "2026-10-31"' '$f|@uri')" | jq -e '(.items | length) == 1 and .items[0].grams == 300'
+          api -X POST $B/foods/records -d "{\"name\":\"Пирог бабушкин\",\"search\":\"пирог бабушкин\",\"kcal\":320,\"code\":\"4600000000123\",\"author\":\"$UID_A\"}"
           TOKEN=$(api -X POST $B/users/auth-with-password -d '{"identity":"b@ex.ru","password":"password1"}' | jq -r .token)
           api "$B/entries/records" | jq -e '.items | length == 0'
-          api "$B/foods/records?filter=$(jq -rn --arg f 'name ~ "пирог"' '$f|@uri')" | jq -e '.items | length == 1'
+          api "$B/foods/records?filter=$(jq -rn --arg f 'search ~ "пирог"' '$f|@uri')" | jq -e '.items[0].name == "Пирог бабушкин"'
           ! api -X DELETE $B/entries/records/abcdefghij12345
           echo "Все проверки прошли"
       - if: failure()
