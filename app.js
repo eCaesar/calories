@@ -128,7 +128,7 @@ $('prevDay').onclick = () => { day = shiftDay(day, -1); renderDiary(); pullSoon(
 $('nextDay').onclick = () => { day = shiftDay(day, 1); renderDiary(); pullSoon(day, day); };
 
 // ---------- Поиск ----------
-const baseFoods = BASE_FOODS.map(([name, kcal, p, f, c]) => ({ key: 'b:' + name, src: 'base', name, kcal, p, f, c }));
+const baseFoods = BASE_FOODS.concat(typeof EXTRA_FOODS !== 'undefined' ? EXTRA_FOODS : []).map(([name, kcal, p, f, c]) => ({ key: 'b:' + name, src: 'base', name, kcal, p, f, c }));
 let srcFilter = 'all';
 let offSeq = 0;
 

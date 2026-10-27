@@ -32,7 +32,7 @@ fi
 
 # 2. Приложение и схема базы
 cp "$REPO"/server/pb_migrations/*.js "$DIR/pb_migrations/"
-cp "$REPO"/{index.html,app.js,sync.js,foods.js,manifest.json,sw.js,icon.svg,icon-192.png,icon-512.png} "$DIR/pb_public/"
+cp "$REPO"/{index.html,app.js,sync.js,foods.js,foods-extra.js,manifest.json,sw.js,icon.svg,icon-192.png,icon-512.png} "$DIR/pb_public/"
 cp -r "$REPO/fonts" "$DIR/pb_public/"
 curl -fsSL -o "$DIR/pb_public/data/off-ru.json.tmp" https://raw.githubusercontent.com/eCaesar/calories/gh-pages/data/off-ru.json \
   && mv "$DIR/pb_public/data/off-ru.json.tmp" "$DIR/pb_public/data/off-ru.json" \
