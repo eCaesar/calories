@@ -1,0 +1,30 @@
+# Запуск: из папки server/ — `DOMAIN=kalorii.example.ru docker compose up -d --build`
+# Caddy сам получает HTTPS-сертификат для DOMAIN.
+services:
+  pocketbase:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./pb_data:/pb/pb_data
+    ports:
+      - "127.0.0.1:${PB_PORT:-8090}:8090"
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    profiles: ["https"]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:?укажите DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - pocketbase
+
+volumes:
+  caddy_data:

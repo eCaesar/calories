@@ -1,0 +1,39 @@
+name: Проверка сервера
+
+on:
+  push:
+    paths: ["server/**", "sync.js", ".github/workflows/test-server.yml"]
+  workflow_dispatch:
+
+jobs:
+  pocketbase:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Запустить PocketBase со схемой
+        run: |
+          curl -fsSL -o pb.zip https://github.com/pocketbase/pocketbase/releases/download/v0.22.21/pocketbase_0.22.21_linux_amd64.zip
+          unzip -q pb.zip pocketbase
+          ./pocketbase serve --http=127.0.0.1:8090 --dir=pb_data --migrationsDir=server/pb_migrations > pb.log 2>&1 &
+          for i in $(seq 30); do curl -sf http://127.0.0.1:8090/api/health && break; sleep 1; done
+      - name: Регистрация, дневник и общая база
+        run: |
+          set -e
+          api() { curl -sS -f -H "Content-Type: application/json" ${TOKEN:+-H "Authorization: $TOKEN"} "$@"; }
+          B=http://127.0.0.1:8090/api/collections
+          api -X POST $B/users/records -d '{"email":"a@ex.ru","password":"password1","passwordConfirm":"password1"}'
+          api -X POST $B/users/records -d '{"email":"b@ex.ru","password":"password1","passwordConfirm":"password1"}'
+          A=$(api -X POST $B/users/auth-with-password -d '{"identity":"a@ex.ru","password":"password1"}')
+          TOKEN=$(echo "$A" | jq -r .token); UID_A=$(echo "$A" | jq -r .record.id)
+          api -X PATCH $B/users/records/$UID_A -d '{"goal":1800}' | jq -e '.goal == 1800'
+          api -X POST $B/entries/records -d "{\"id\":\"abcdefghij12345\",\"user\":\"$UID_A\",\"day\":\"2026-10-27\",\"meal\":\"lunch\",\"grams\":250,\"name\":\"Борщ\",\"kcal\":49,\"p\":1.1,\"f\":2.2,\"c\":6.7}"
+          api -X PATCH $B/entries/records/abcdefghij12345 -d '{"grams":300}' | jq -e '.grams == 300'
+          api "$B/entries/records?filter=$(jq -rn --arg f 'day >= "2026-10-01" && day <= "2026-10-31"' '$f|@uri')" | jq -e '.items | length == 1'
+          api -X POST $B/foods/records -d "{\"name\":\"Пирог бабушкин\",\"kcal\":320,\"code\":\"4600000000123\",\"author\":\"$UID_A\"}"
+          TOKEN=$(api -X POST $B/users/auth-with-password -d '{"identity":"b@ex.ru","password":"password1"}' | jq -r .token)
+          api "$B/entries/records" | jq -e '.items | length == 0'
+          api "$B/foods/records?filter=$(jq -rn --arg f 'name ~ "пирог"' '$f|@uri')" | jq -e '.items | length == 1'
+          ! api -X DELETE $B/entries/records/abcdefghij12345
+          echo "Все проверки прошли"
+      - if: failure()
+        run: cat pb.log

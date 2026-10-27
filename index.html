@@ -167,6 +167,7 @@ label.chk{display:flex;gap:12px;align-items:center;font-size:16px;color:var(--in
 .block input{background:var(--bg)}
 .toast{position:fixed;left:16px;right:16px;max-width:400px;margin:0 auto;top:calc(env(safe-area-inset-top) + 12px);background:var(--ink);color:var(--bg);padding:14px 18px;border-radius:18px;z-index:50;display:none;font-size:16px;font-weight:500;text-align:center;box-shadow:0 10px 30px -10px rgba(0,0,0,.35)}
 a{color:var(--brand);font-weight:500}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -267,6 +268,18 @@ a{color:var(--brand);font-weight:500}
     </div>
     <button class="solid add-btn" id="sSave">Сохранить</button>
     <div class="block">
+      <b>Аккаунт</b>
+      <div id="accOut">
+        <p class="muted">Войдите, чтобы дневник был на всех ваших телефонах, а новые продукты сразу видели все в семье.</p>
+        <label class="cap" for="aEmail">Почта</label><input id="aEmail" type="email" autocomplete="username" inputmode="email">
+        <label class="cap" for="aPass">Пароль, не короче 8 символов</label><input id="aPass" type="password" autocomplete="current-password">
+        <button class="solid add-btn" id="aLogin">Войти</button>
+        <button class="add-btn line" id="aRegister">Создать аккаунт</button>
+      </div>
+      <div id="accIn" hidden><p class="muted" id="accInfo"></p><button class="add-btn line" id="aLogout">Выйти</button></div>
+      <div id="serverRow"><label class="cap" for="sServer">Адрес сервера</label><input id="sServer" inputmode="url" placeholder="https://kalorii.example.ru"></div>
+    </div>
+    <div class="block">
       <b>Резервная копия</b>
       <p class="muted">Все данные хранятся только на этом телефоне. Сохраните копию, чтобы перенести на другое устройство.</p>
       <button class="add-btn line" id="exportBtn">Скачать копию</button>
@@ -279,6 +292,7 @@ a{color:var(--brand);font-weight:500}
 
 <div class="toast" id="toast"></div>
 <script src="foods.js"></script>
+<script src="sync.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

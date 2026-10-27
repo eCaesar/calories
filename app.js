@@ -45,7 +45,8 @@ function guessMeal() {
 const norm = (s) => (s || '').toLowerCase().replace(/ё/g, 'е').trim();
 const r0 = (n) => Math.round(n);
 const r1 = (n) => Math.round(n * 10) / 10;
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+// 15 символов [a-z0-9] — такой же формат id, как у записей на сервере
+const uid = () => Array.from(crypto.getRandomValues(new Uint8Array(15)), (b) => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -123,8 +124,8 @@ $('diary').addEventListener('click', (ev) => {
     if (e) openPortion(e, e);
   }
 });
-$('prevDay').onclick = () => { day = shiftDay(day, -1); renderDiary(); };
-$('nextDay').onclick = () => { day = shiftDay(day, 1); renderDiary(); };
+$('prevDay').onclick = () => { day = shiftDay(day, -1); renderDiary(); pullSoon(day, day); };
+$('nextDay').onclick = () => { day = shiftDay(day, 1); renderDiary(); pullSoon(day, day); };
 
 // ---------- Поиск ----------
 const baseFoods = BASE_FOODS.map(([name, kcal, p, f, c]) => ({ key: 'b:' + name, src: 'base', name, kcal, p, f, c }));
@@ -190,8 +191,9 @@ function runSearch() {
   if (norm(q).length < 3) return;
   runSearch.t = setTimeout(async () => {
     const seq = ++offSeq;
-    await loadOffDb();
+    const [shared] = await Promise.all([Sync.searchFoods(q), loadOffDb()]);
     if (seq !== offSeq) return;
+    local.splice(1, 0, ['Общая база', shared]);
     let shop = searchOffDb(q);
     showResults([...local, ['Магазинные товары', shop]]);
     if (shop.length >= 10) return;
@@ -265,6 +267,8 @@ async function lookupBarcode(code) {
   if (!code) return;
   const own = mine.find((m) => m.code === code);
   if (own) return openPortion(own);
+  const shared = await Sync.foodByCode(code);
+  if (shared) return openPortion(shared);
   if (offCache[code]) return openPortion(offCache[code]);
   await loadOffDb();
   if (offByCode.has(code)) return openPortion(offRow(offByCode.get(code)));
@@ -333,14 +337,17 @@ $('pSave').onclick = () => {
   if (!(grams > 0)) return toast('Укажите вес');
   const meal = $('pMeal').value;
   const list = (diary[day] = diary[day] || []);
+  let saved = editingEntry;
   if (editingEntry) {
     Object.assign(editingEntry, { grams, meal });
   } else {
     const f = portionFood;
-    list.push({ id: uid(), meal, grams, key: f.key, name: f.name, brand: f.brand || '', kcal: f.kcal, p: f.p, f: f.f, c: f.c });
+    saved = { id: uid(), meal, grams, key: f.key, name: f.name, brand: f.brand || '', kcal: f.kcal, p: f.p, f: f.f, c: f.c };
+    list.push(saved);
     rememberRecent({ ...f, lastGrams: grams });
   }
   store.set('diary', diary);
+  Sync.putEntry(saved, day);
   closeSheet('portionSheet'); closeSheet('searchSheet');
   renderDiary();
   toast(editingEntry ? 'Сохранено' : 'Добавлено');
@@ -348,6 +355,7 @@ $('pSave').onclick = () => {
 $('pDelete').onclick = () => {
   diary[day] = (diary[day] || []).filter((e) => e !== editingEntry);
   store.set('diary', diary);
+  Sync.delEntry(editingEntry.id, day);
   closeSheet('portionSheet'); renderDiary();
 };
 function rememberRecent(food) {
@@ -362,11 +370,11 @@ function openProductForm(pref = {}) {
   $('fName').value = pref.name || $('q').value || '';
   $('fCode').value = pref.code || '';
   ['fKcal', 'fP', 'fF', 'fC', 'fServing'].forEach((id) => ($(id).value = ''));
-  $('fShareHint').textContent = settings.offUser ? '' : 'Чтобы отправлять, укажите аккаунт Open Food Facts в настройках. Без него продукт сохранится только у вас.';
+  $('fShareHint').textContent = Sync.loggedIn() || settings.offUser ? '' : 'Чтобы продукт увидели все, войдите в аккаунт в настройках. Пока он сохранится только у вас.';
   openSheet('productSheet');
 }
 $('newProduct').onclick = () => openProductForm();
-$('fSave').onclick = () => {
+$('fSave').onclick = async () => {
   const name = $('fName').value.trim();
   const kcal = parseFloat($('fKcal').value.replace(',', '.'));
   if (!name || !(kcal >= 0)) return toast('Нужны название и калории');
@@ -376,7 +384,10 @@ $('fSave').onclick = () => {
   const food = { key: 'm:' + id, src: 'mine', name, code, kcal, p: num('fP'), f: num('fF'), c: num('fC'), serving: num('fServing') || null };
   mine = [food, ...mine.filter((m) => !(code && m.code === code))];
   store.set('mine', mine);
-  if (code && $('fShare').checked && settings.offUser) shareToOFF(food);
+  if ($('fShare').checked) {
+    if (Sync.loggedIn()) Sync.shareFood(food).then((r) => r && toast('Добавлено в общую базу'));
+    if (code && settings.offUser) shareToOFF(food);
+  }
   closeSheet('productSheet');
   openPortion(food);
 };
@@ -448,6 +459,8 @@ $('openSettings').onclick = () => {
   $('sGoal').value = settings.goal;
   $('sOffUser').value = settings.offUser || '';
   $('sOffPass').value = settings.offPass || '';
+  $('sServer').value = settings.server || '';
+  renderAccount();
   openSheet('settingsSheet');
 };
 $('sSave').onclick = () => {
@@ -455,7 +468,9 @@ $('sSave').onclick = () => {
   if (g > 0) settings.goal = g;
   settings.offUser = $('sOffUser').value.trim();
   settings.offPass = $('sOffPass').value;
+  settings.server = $('sServer').value.trim();
   store.set('settings', settings);
+  Sync.saveGoal(settings.goal);
   closeSheet('settingsSheet'); renderDiary();
 };
 $('exportBtn').onclick = () => {
@@ -483,7 +498,64 @@ $('importFile').onchange = async (ev) => {
   }
 };
 
+// ---------- Аккаунт и синхронизация ----------
+function renderAccount() {
+  const user = Sync.user;
+  $('accOut').hidden = !!user;
+  $('accIn').hidden = !user;
+  $('serverRow').hidden = !!user || (Sync.available() && !settings.server);
+  if (user) {
+    const pending = Sync.pending;
+    $('accInfo').textContent = `Вы вошли как ${user.email}. ` + (pending ? `Ждут отправки: ${pending}.` : 'Всё сохранено на сервере.');
+  }
+}
+async function accountAction(register) {
+  settings.server = $('sServer').value.trim();
+  store.set('settings', settings);
+  const email = $('aEmail').value.trim(), pass = $('aPass').value;
+  if (!Sync.available()) return toast('Укажите адрес сервера');
+  if (!email || !pass) return toast('Введите почту и пароль');
+  try {
+    const user = await (register ? Sync.register(email, pass) : Sync.login(email, pass));
+    $('aPass').value = '';
+    if (user.goal > 0) settings.goal = user.goal; else Sync.saveGoal(settings.goal);
+    store.set('settings', settings);
+    await Sync.uploadAll(diary);
+    await pullRecent();
+    renderAccount(); renderDiary();
+    toast(register ? 'Аккаунт создан' : 'Вы вошли');
+  } catch (e) {
+    toast(e.message || 'Нет связи с сервером');
+  }
+}
+$('aLogin').onclick = () => accountAction(false);
+$('aRegister').onclick = () => accountAction(true);
+$('aLogout').onclick = () => { Sync.logout(); renderAccount(); toast('Вы вышли. Записи остались на телефоне'); };
+
+function applyRemote(byDay, from, to, pending) {
+  const days = new Set([...Object.keys(byDay), ...Object.keys(diary).filter((d) => d >= from && d <= to)]);
+  for (const d of days) {
+    const keep = (diary[d] || []).filter((e) => pending.has(e.id));
+    const remote = (byDay[d] || []).filter((e) => !pending.has(e.id));
+    const merged = [...remote, ...keep];
+    if (merged.length) diary[d] = merged; else delete diary[d];
+  }
+  store.set('diary', diary);
+  renderDiary();
+}
+function pullRecent() { return Sync.pull(shiftDay(todayKey(), -30), shiftDay(todayKey(), 1)).catch(() => {}); }
+function pullSoon(from, to) { clearTimeout(pullSoon.t); pullSoon.t = setTimeout(() => Sync.pull(from, to).catch(() => {}), 400); }
+Sync.init({
+  getEntry: (id, d) => (diary[d] || []).find((e) => e.id === id),
+  applyRemote,
+  onStatus: (why) => {
+    if (why === 'visible') pullRecent();
+    if ($('settingsSheet').classList.contains('open')) renderAccount();
+  },
+});
+
 // ---------- Старт ----------
 renderDiary();
+pullRecent();
 setTimeout(loadOffDb, 1500);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
