@@ -73,7 +73,7 @@ const MEAL_ICONS = {
   dinner: '<path class="d" d="M19.5 14.5A8 8 0 1 1 9.5 4.5a6.5 6.5 0 0 0 10 10z"/><path d="M19.5 14.5A8 8 0 1 1 9.5 4.5a6.5 6.5 0 0 0 10 10zM17 3.5v3M15.5 5h3"/>',
   snack: '<path class="d" d="M12 8c-2-1.5-7-1.5-7 3.5 0 4.5 3 9 5 9 1 0 1.3-.5 2-.5s1 .5 2 .5c2 0 5-4.5 5-9C19 6.5 14 6.5 12 8z"/><path d="M12 8c-2-1.5-7-1.5-7 3.5 0 4.5 3 9 5 9 1 0 1.3-.5 2-.5s1 .5 2 .5c2 0 5-4.5 5-9C19 6.5 14 6.5 12 8zM12 8c0-2 .8-3.6 2.5-4.5"/>',
 };
-const MACRO_TONES = { p: '#ffd38a', f: '#ffb39a', c: '#a8ead9' };
+const MACRO_TONES = { p: '#ffc23d', f: '#ffa184', c: '#7fe6f2' };
 function macroPill(name, val, goal, tone) {
   return `<div class="mpill"><div class="t">${name}</div><div class="v mono">${r0(val)} <small>/ ${goal} г</small></div>
     <div class="mbar" style="--mc:${tone}"><i class="${val > goal ? 'over' : ''}" style="width:${Math.min(100, (val / goal) * 100)}%"></i></div></div>`;
@@ -98,7 +98,7 @@ function renderDiary() {
       ${share > 0 ? `<path class="val" d="${arc}" pathLength="100" fill="none" stroke-width="16" stroke-linecap="round" stroke-dasharray="${share} 100"/>` : ''}
     </svg>
     <div class="mid"><div class="n mono">${r0(Math.abs(left))}</div><div class="l">${left >= 0 ? 'ккал осталось' : 'ккал сверх нормы'}</div></div></div>
-    <div class="ends"><div><span>Съедено</span><b class="mono">${r0(tot.kcal)}</b></div><div><span>Цель</span><b class="mono">${goal}</b></div></div>
+    <div class="ends"><div><span>Съедено</span><b class="mono">${r0(tot.kcal)} <small>ккал</small></b></div><div><span>Цель</span><b class="mono">${goal} <small>ккал</small></b></div></div>
     <div class="macros">${macroPill('Белки', tot.p, gp, MACRO_TONES.p)}${macroPill('Жиры', tot.f, gf, MACRO_TONES.f)}${macroPill('Углеводы', tot.c, gc, MACRO_TONES.c)}</div>
   </section>`;
   for (const [mk, mn] of MEALS) {
@@ -108,7 +108,7 @@ function renderDiary() {
       <div class="meal-t"><b>${mn}</b><span class="mono">${items.length ? r0(kcalOf(items)) + ' ккал' : 'Пока ничего'}</span></div>
       <button class="meal-add" data-addmeal="${mk}" aria-label="Добавить в ${mn.toLowerCase()}"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>`;
     for (const e of items) {
-      html += `<div class="row result" data-entry="${e.id}"><div class="name">${esc(e.name)}${e.brand ? `<small>${esc(e.brand)}</small>` : ''}</div><span class="val mono">${r0(calc(e, e.grams).kcal)} ккал<small>${r0(e.grams)} г</small></span></div>`;
+      html += `<div class="row result" data-entry="${e.id}"><div class="name">${esc(e.name)}<small>${r0(e.grams)} г${e.brand ? ' · ' + esc(e.brand) : ''}</small></div><span class="val mono">${r0(calc(e, e.grams).kcal)} ккал</span></div>`;
     }
     html += `</section>`;
   }
@@ -165,7 +165,7 @@ function matchLocal(list, q) {
 function resultRow(f) {
   const tag = f.src === 'mine' ? ' · мой' : '';
   const sub = f.brand ? esc(f.brand) + tag : tag.slice(3);
-  return `<div class="row result" data-key="${esc(f.key)}"><div class="name">${esc(f.name)}${sub ? `<small>${sub}</small>` : ''}</div><span class="val mono">${r0(f.kcal)} ккал<small>в 100 г</small></span></div>`;
+  return `<div class="row result" data-key="${esc(f.key)}"><div class="name">${esc(f.name)}${sub ? `<small>${sub}</small>` : ''}</div><span class="val mono">${r0(f.kcal)} ккал</span></div>`;
 }
 let shown = new Map();
 function showResults(groups) {
@@ -173,7 +173,7 @@ function showResults(groups) {
   let html = '';
   for (const [title, items] of groups) {
     if (!items.length) continue;
-    if (title) html += `<p class="cap muted">${title}</p>`;
+    html += `<div class="sec"><span>${title}</span><span>ккал на 100 г</span></div>`;
     html += '<div class="group">' + items.map((f) => { shown.set(f.key, f); return resultRow(f); }).join('') + '</div>';
   }
   $('results').innerHTML = html ? html : '<p class="muted">Ничего не найдено. Создайте свой продукт, он запомнится.</p>';
@@ -319,7 +319,9 @@ function openPortion(food, entry) {
 function updatePortion() {
   const v = calc(portionFood, +$('pGrams').value || 0);
   $('pKcal').textContent = r0(v.kcal);
-  $('pMacros').innerHTML = `<span><b>${r1(v.p)}</b>белки, г</span><span><b>${r1(v.f)}</b>жиры, г</span><span><b>${r1(v.c)}</b>углеводы, г</span>`;
+  const g = +$('pGrams').value;
+  $('pChips').querySelectorAll('[data-g]').forEach((b) => b.classList.toggle('on', +b.dataset.g === g));
+  $('pMacros').innerHTML = `<span><b>${r1(v.p)} г</b>белки</span><span><b>${r1(v.f)} г</b>жиры</span><span><b>${r1(v.c)} г</b>углеводы</span>`;
 }
 $('pGrams').addEventListener('input', updatePortion);
 $('pChips').addEventListener('click', (ev) => {
