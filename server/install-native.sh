@@ -14,7 +14,12 @@ DIR=/opt/kalorii
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 
 [ "$(id -u)" = 0 ] || { echo "Запустите через sudo"; exit 1; }
-apt-get install -y -q unzip curl nginx certbot >/dev/null
+apt-get install -y -q unzip curl nginx >/dev/null
+# Если certbot уже стоит (например свой в /opt), используем его: тогда сертификат продлит уже настроенный таймер
+for c in "${CERTBOT:-}" /opt/certbot-ip/bin/certbot "$(command -v certbot || true)"; do
+  [ -n "$c" ] && [ -x "$c" ] && { CERTBOT="$c"; break; }
+done
+if [ -z "${CERTBOT:-}" ] || [ ! -x "$CERTBOT" ]; then apt-get install -y -q certbot >/dev/null; CERTBOT="$(command -v certbot)"; fi
 
 # 1. PocketBase
 case "$(uname -m)" in x86_64) ARCH=amd64 ;; aarch64|arm64) ARCH=arm64 ;; *) echo "Неизвестная архитектура"; exit 1 ;; esac
@@ -67,7 +72,7 @@ ln -sf /etc/nginx/sites-available/kalorii-acme.conf /etc/nginx/sites-enabled/kal
 nginx -t && systemctl reload nginx
 
 if [ ! -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
-  certbot certonly --webroot -w /var/www/kalorii-acme -d "$DOMAIN" --non-interactive --agree-tos \
+  "$CERTBOT" certonly --webroot -w /var/www/kalorii-acme -d "$DOMAIN" --non-interactive --agree-tos \
     ${EMAIL:+--email "$EMAIL"} ${EMAIL:---register-unsafely-without-email}
 fi
 
