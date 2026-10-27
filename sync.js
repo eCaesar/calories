@@ -18,7 +18,9 @@ const Sync = (() => {
     const custom = (read('settings', {}).server || '').trim();
     if (custom) return custom.replace(/\/+$/, '');
     if (DEFAULT_SERVER) return DEFAULT_SERVER;
-    return /github\.io$/.test(location.hostname) || location.protocol === 'file:' ? '' : location.origin;
+    if (/github\.io$/.test(location.hostname) || location.protocol === 'file:') return '';
+    // Сервер отдаёт и приложение, и /api — в том числе из подпапки вроде example.ru/calories/
+    return new URL('.', location.href).href.replace(/\/+$/, '');
   }
   const available = () => !!server();
   const loggedIn = () => !!(auth && auth.token);
