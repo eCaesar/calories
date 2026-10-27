@@ -21,22 +21,22 @@ COUNTRIES = ["en:russia", "en:belarus", "en:kazakhstan", "en:ukraine", "en:uzbek
 QUERY = f"""
 WITH p AS (
   SELECT code, product_name AS pn, brands, nutriments AS nu, serving_quantity AS sq,
-         list_filter(product_name, x -> x.lang = 'ru' AND x.text <> '') AS ru
+         list_filter(product_name, lambda x: x.lang = 'ru' AND x.text <> '') AS ru
   FROM read_parquet('{URL}')
   WHERE code IS NOT NULL AND (
     list_has_any(countries_tags, {COUNTRIES})
     OR regexp_matches(code, '^(46[0-9]|481|487)')
-    OR len(list_filter(product_name, x -> x.lang = 'ru' AND x.text <> '')) > 0)
+    OR len(list_filter(product_name, lambda x: x.lang = 'ru' AND x.text <> '')) > 0)
 )
 SELECT code,
-  coalesce(nullif(trim(ru[1].text), ''), nullif(trim(list_filter(pn, x -> x.lang = 'main')[1].text), ''),
+  coalesce(nullif(trim(ru[1].text), ''), nullif(trim(list_filter(pn, lambda x: x.lang = 'main')[1].text), ''),
            nullif(trim(pn[1].text), '')) AS name,
   brands,
-  list_filter(nu, x -> x.name = 'energy-kcal')[1]."100g" AS kcal,
-  list_filter(nu, x -> x.name = 'energy')[1]."100g" AS kj,
-  list_filter(nu, x -> x.name = 'proteins')[1]."100g" AS p,
-  list_filter(nu, x -> x.name = 'fat')[1]."100g" AS f,
-  list_filter(nu, x -> x.name = 'carbohydrates')[1]."100g" AS c,
+  list_filter(nu, lambda x: x.name = 'energy-kcal')[1]."100g" AS kcal,
+  list_filter(nu, lambda x: x.name = 'energy')[1]."100g" AS kj,
+  list_filter(nu, lambda x: x.name = 'proteins')[1]."100g" AS p,
+  list_filter(nu, lambda x: x.name = 'fat')[1]."100g" AS f,
+  list_filter(nu, lambda x: x.name = 'carbohydrates')[1]."100g" AS c,
   sq
 FROM p
 """
