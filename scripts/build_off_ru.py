@@ -1,16 +1,19 @@
 """Собирает компактную базу товаров из выгрузки Open Food Facts.
 
-Берёт товары, продающиеся в России/Беларуси/Казахстане (по стране или по
-штрихкоду 460–469, 481, 487), у которых указаны калории. Результат —
+Берёт товары, продающиеся в России и СНГ (по стране, по штрихкоду 460–469,
+481, 487 или по русскому названию), у которых указаны калории. Результат —
 data/off-ru.json: [[штрихкод, название, бренд, ккал, б, ж, у, порция], ...]
 Запуск: python scripts/build_off_ru.py < products.csv  (CSV из дампа OFF)
 """
 import csv
+import re
 import json
 import os
 import sys
 
-COUNTRIES = ("en:russia", "en:belarus", "en:kazakhstan")
+COUNTRIES = ("en:russia", "en:belarus", "en:kazakhstan", "en:ukraine", "en:uzbekistan", "en:kyrgyzstan",
+             "en:armenia", "en:georgia", "en:moldova", "en:azerbaijan", "en:tajikistan")
+CYRILLIC = re.compile("[А-Яа-яЁё]")
 PREFIXES = tuple(str(p) for p in range(460, 470)) + ("481", "487")
 
 
@@ -34,7 +37,8 @@ def main():
         if not code.isdigit() or code in seen:
             continue
         countries = row.get("countries_tags") or ""
-        if not (code.startswith(PREFIXES) or any(c in countries for c in COUNTRIES)):
+        name_any = row.get("product_name") or ""
+        if not (code.startswith(PREFIXES) or any(c in countries for c in COUNTRIES) or CYRILLIC.search(name_any)):
             continue
         stats["ru"] += 1
         name = (row.get("product_name") or row.get("abbreviated_product_name") or row.get("generic_name") or "").strip()
