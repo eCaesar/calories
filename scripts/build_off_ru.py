@@ -27,19 +27,26 @@ def main():
     reader = csv.DictReader(sys.stdin, delimiter="\t", quoting=csv.QUOTE_NONE)
     seen = set()
     out = []
+    stats = {"rows": 0, "ru": 0, "no_name": 0, "no_kcal": 0}
     for row in reader:
+        stats["rows"] += 1
         code = (row.get("code") or "").strip()
         if not code.isdigit() or code in seen:
             continue
         countries = row.get("countries_tags") or ""
         if not (code.startswith(PREFIXES) or any(c in countries for c in COUNTRIES)):
             continue
-        name = (row.get("product_name") or "").strip()
+        stats["ru"] += 1
+        name = (row.get("product_name") or row.get("abbreviated_product_name") or row.get("generic_name") or "").strip()
         kcal = num(row.get("energy-kcal_100g"))
         if kcal is None:
             kj = num(row.get("energy_100g"))
             kcal = kj / 4.184 if kj is not None else None
-        if not name or kcal is None or kcal > 950:
+        if not name:
+            stats["no_name"] += 1
+            continue
+        if kcal is None or kcal > 950:
+            stats["no_kcal"] += 1
             continue
         p, f, c = (num(row.get(k)) or 0 for k in ("proteins_100g", "fat_100g", "carbohydrates_100g"))
         serving = num(row.get("serving_quantity"))
@@ -50,6 +57,10 @@ def main():
     os.makedirs("data", exist_ok=True)
     with open("data/off-ru.json", "w", encoding="utf-8") as fh:
         json.dump(out, fh, ensure_ascii=False, separators=(",", ":"))
+    stats["products"] = len(out)
+    stats["columns"] = reader.fieldnames[:400] if reader.fieldnames else []
+    with open("data/stats.json", "w", encoding="utf-8") as fh:
+        json.dump(stats, fh, ensure_ascii=False)
     print(f"products: {len(out)}", file=sys.stderr)
 
 
