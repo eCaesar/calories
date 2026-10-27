@@ -43,7 +43,7 @@ jobs:
       - name: Подготовить сайт
         run: |
           mkdir -p _site/data
-          cp index.html app.js foods.js manifest.json sw.js icon.svg icon-192.png icon-512.png _site/
+          cp -r index.html app.js foods.js manifest.json sw.js icon.svg icon-192.png icon-512.png fonts _site/
           cp data/off-ru.json _site/data/
 
       - uses: actions/upload-pages-artifact@v3

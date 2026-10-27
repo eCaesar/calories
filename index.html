@@ -3,107 +3,141 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0f1311" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f2f2ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e0e0d" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Калории">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Калории</title>
 <style>
-:root{--bg:#f6f4ef;--card:#ffffff;--text:#1b2420;--muted:#7a847e;--accent:#2f9e6e;--accent-2:#5cc28f;--soft:#eaf5ef;--line:#eeece6;--danger:#d9534f;
---prot:#ec7357;--fat:#f2b43f;--carb:#4f8fdc;--shadow:0 6px 24px rgba(40,60,50,.08);--radius:22px}
-@media (prefers-color-scheme:dark){:root{--bg:#0f1311;--card:#181e1b;--text:#e9eeeb;--muted:#8f9a94;--accent:#45b884;--accent-2:#6fd3a2;--soft:#1d2b24;--line:#252d29;--shadow:0 6px 24px rgba(0,0,0,.35)}}
+@font-face{font-family:Golos;font-weight:400;font-display:swap;src:url(fonts/golos-text-cyrillic-400-normal.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:Golos;font-weight:400;font-display:swap;src:url(fonts/golos-text-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:Golos;font-weight:500;font-display:swap;src:url(fonts/golos-text-cyrillic-500-normal.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:Golos;font-weight:500;font-display:swap;src:url(fonts/golos-text-latin-500-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:Golos;font-weight:600;font-display:swap;src:url(fonts/golos-text-cyrillic-600-normal.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:Golos;font-weight:600;font-display:swap;src:url(fonts/golos-text-latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:Mono;font-weight:500;font-display:swap;src:url(fonts/jetbrains-mono-cyrillic-500-normal.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:Mono;font-weight:500;font-display:swap;src:url(fonts/jetbrains-mono-latin-500-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+2212}
+@font-face{font-family:Mono;font-weight:700;font-display:swap;src:url(fonts/jetbrains-mono-cyrillic-700-normal.woff2) format('woff2');unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116}
+@font-face{font-family:Mono;font-weight:700;font-display:swap;src:url(fonts/jetbrains-mono-latin-700-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+2212}
+:root{--bg:#f2f2ef;--surface:#fff;--ink:#121212;--muted:#6b6b66;--hair:#d6d6d0;--accent:#e5481b;--m1:#121212;--m2:#55554f;--m3:#8c8c86;--m4:#c4c4be}
+@media (prefers-color-scheme:dark){:root{--bg:#0e0e0d;--surface:#1a1a18;--ink:#ecebe6;--muted:#8a8a84;--hair:#2a2a27;--accent:#ff5b2e;--m1:#ecebe6;--m2:#b0afa9;--m3:#7a7a74;--m4:#4a4a46}}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 "Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
-header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;display:flex;align-items:center;gap:4px}
-header h1{font-size:19px;font-weight:800;margin:0;flex:1;text-align:center;letter-spacing:-.2px}
-main{padding:4px 16px calc(env(safe-area-inset-bottom) + 110px);max-width:560px;margin:0 auto}
-button{font:inherit;font-weight:600;border:0;border-radius:14px;padding:11px 16px;background:var(--soft);color:var(--text);cursor:pointer;transition:transform .12s,opacity .12s}
-button:active{transform:scale(.96)}
-button.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;box-shadow:0 6px 16px color-mix(in srgb,var(--accent) 35%,transparent)}
-button.icon{width:42px;height:42px;padding:0;background:var(--card);border-radius:50%;font-size:20px;box-shadow:var(--shadow);display:grid;place-items:center}
-button.danger{color:var(--danger);background:transparent}
-input,select{font:inherit;width:100%;padding:13px 14px;border-radius:14px;border:1.5px solid var(--line);background:var(--card);color:var(--text);outline:none;transition:border-color .15s}
-input:focus,select:focus{border-color:var(--accent)}
-.card{background:var(--card);border-radius:var(--radius);padding:16px;margin:12px 0;box-shadow:var(--shadow)}
-.summary{display:flex;align-items:center;gap:18px;padding:20px}
-.ring{position:relative;width:132px;height:132px;flex:none}
-.ring svg{transform:rotate(-90deg)}
-.ring .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.ring .center b{font-size:28px;font-weight:800;letter-spacing:-.5px;line-height:1}
-.ring .center span{font-size:12px;color:var(--muted);margin-top:4px}
-.stats{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
-.stat{display:flex;justify-content:space-between;font-size:14px;color:var(--muted)}
-.stat b{color:var(--text)}
-.macro{font-size:13px}
-.macro .top{display:flex;justify-content:space-between;color:var(--muted)}
-.macro .top b{color:var(--text);font-weight:700}
-.mbar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:4px}
-.mbar i{display:block;height:100%;border-radius:3px}
-.meal{padding:14px 16px}
-.meal-h{display:flex;align-items:center;gap:12px}
-.meal-ico{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;font-size:21px;background:var(--soft);flex:none}
-.meal-h .t{flex:1}
-.meal-h .t b{display:block;font-size:16px}
-.meal-h .t span{font-size:13px;color:var(--muted)}
-.meal-add{width:38px;height:38px;padding:0;border-radius:50%;font-size:22px;line-height:1;background:var(--soft);color:var(--accent)}
-.row{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)}
-.meal-h + .row{border-top:0;margin-top:6px}
-.row:first-child{border-top:0}
-.row .name{flex:1;min-width:0;font-weight:600;font-size:15px}
-.row .name small{display:block;color:var(--muted);font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.row .val{white-space:nowrap;font-weight:700;font-size:14px}
-.row .val small{color:var(--muted);font-weight:500}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 Golos,system-ui,sans-serif;-webkit-tap-highlight-color:transparent;font-feature-settings:"tnum"}
+.mono{font-family:Mono,ui-monospace,monospace;font-weight:500;font-variant-numeric:tabular-nums}
+.cap{font-family:Mono,ui-monospace,monospace;font-weight:500;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+svg.i{width:22px;height:22px;stroke:currentColor;stroke-width:1.6;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(env(safe-area-inset-top) + 10px) 16px 0;max-width:560px;margin:0 auto}
+.hrow{display:flex;align-items:flex-end;gap:2px;padding-bottom:10px;border-bottom:8px solid var(--ink)}
+.htitle{flex:1;min-width:0}
+.htitle h1{font-size:30px;font-weight:600;letter-spacing:-.02em;margin:0;line-height:1.05}
+main{padding:0 16px calc(env(safe-area-inset-bottom) + 96px);max-width:560px;margin:0 auto}
+button{font:inherit;font-weight:500;border:0;border-radius:6px;padding:11px 14px;background:transparent;color:var(--ink);cursor:pointer}
+button:active{opacity:.6}
+button.icon{padding:8px;line-height:0}
+button.solid{background:var(--ink);color:var(--bg)}
+button.go{background:var(--accent);color:#fff}
+button.line{border:1px solid var(--ink)}
+button.danger{color:var(--accent)}
+input,select{font:inherit;width:100%;padding:12px 2px;border:0;border-bottom:1px solid var(--ink);border-radius:0;background:transparent;color:var(--ink);outline:none}
+input:focus,select:focus{border-bottom-color:var(--accent);box-shadow:0 1px 0 var(--accent)}
+input[type=checkbox]{width:auto;accent-color:var(--accent)}
+/* Итог дня */
+.eq{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding:14px 0 2px;font-size:13px;color:var(--muted)}
+.eq b{color:var(--ink);font-weight:500}
+.left{display:flex;align-items:baseline;gap:10px;padding:2px 0 12px}
+.left .n{font-size:68px;font-weight:600;letter-spacing:-.035em;line-height:1}
+.left.over .n{color:var(--accent)}
+.ruler{position:relative;height:30px;margin:4px 0 2px}
+.ruler .track{position:absolute;left:0;right:0;top:0;height:14px;background:repeating-linear-gradient(90deg,var(--hair) 0 1px,transparent 1px 100%);background-size:var(--tick) 100%;border-bottom:1px solid var(--ink)}
+.ruler .seg{position:absolute;top:0;height:14px}
+.ruler .overseg{position:absolute;top:0;height:14px;background:repeating-linear-gradient(135deg,var(--accent) 0 3px,transparent 3px 6px)}
+.ruler .target{position:absolute;top:-4px;width:2px;height:22px;background:var(--ink)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;padding:6px 0 14px;border-bottom:1px solid var(--hair)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;display:inline-block}
+.macro{display:grid;grid-template-columns:84px 1fr 104px;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--hair);font-size:15px}
+.mbar{position:relative;height:3px;background:var(--hair)}
+.mbar i{position:absolute;left:0;top:0;bottom:0;background:var(--ink)}
+.mbar i.over{background:var(--accent)}
+.mbar u{position:absolute;top:-4px;width:1px;height:11px;background:var(--ink)}
+.macro .mono{font-size:13px;color:var(--muted);text-align:right}
+.macro .mono b{color:var(--ink);font-weight:500}
+/* Приёмы пищи */
+.meal{margin-top:26px;border-top:3px solid var(--ink)}
+.meal-h{display:flex;align-items:center;gap:8px;padding:8px 0 6px}
+.meal-h .cap{color:var(--ink);font-size:12px;font-weight:700;flex:1}
+.meal-h .k{font-size:13px}
+.meal-add{font-size:14px;color:var(--muted);padding:10px 0;display:flex;align-items:center;gap:6px;width:100%;border-top:1px solid var(--hair);border-radius:0;justify-content:flex-start}
+.meal-add svg.i{width:18px;height:18px}
+.row{display:flex;align-items:baseline;gap:12px;padding:11px 0;border-top:1px solid var(--hair)}
+.row .name{flex:1;min-width:0;font-size:16px}
+.row .g{font-size:13px;color:var(--muted);white-space:nowrap}
+.row .val{font-size:15px;white-space:nowrap;min-width:44px;text-align:right}
+.row small{display:block;color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .result{cursor:pointer}
-.add-btn{width:100%;margin-top:10px}
-.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 18px);display:flex;gap:6px;padding:6px;background:var(--card);border-radius:30px;box-shadow:0 10px 30px rgba(20,40,30,.18);z-index:4}
-.fab button{border-radius:24px;padding:13px 22px;white-space:nowrap}
-.fab button:not(.primary){background:transparent}
-.sheet{position:fixed;inset:0;background:var(--bg);z-index:20;display:none;flex-direction:column;animation:up .22s ease-out}
+.empty{font-size:14px;color:var(--muted);padding:6px 0 10px}
+/* Нижняя панель */
+.fab{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(env(safe-area-inset-bottom) + 10px);background:var(--bg);border-top:1px solid var(--ink);display:flex;gap:8px;z-index:4;max-width:560px;margin:0 auto}
+.fab button{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;font-weight:600}
+/* Листы */
+.sheet{position:fixed;inset:0;background:var(--bg);z-index:20;display:none;flex-direction:column}
 .sheet.open{display:flex}
-@keyframes up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+.sheet header{width:100%}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+input[type=search]::-webkit-search-cancel-button{-webkit-appearance:none}
+.sheet header .hrow{border-bottom-width:3px;align-items:center}
+.sheet header h1{font-size:20px}
 .sheet .body{flex:1;overflow:auto;padding:4px 16px 28px;max-width:560px;width:100%;margin:0 auto}
-.tabs{display:flex;gap:6px;margin:12px 0 4px;overflow-x:auto;scrollbar-width:none}
-.tabs button{padding:8px 14px;font-size:14px;border-radius:20px;background:var(--card);box-shadow:var(--shadow);flex:none}
-.tabs button.on{background:var(--text);color:var(--bg)}
-.muted{color:var(--muted);font-size:13px}
-p.muted{margin:16px 4px 0;text-transform:uppercase;letter-spacing:.6px;font-weight:700;font-size:12px}
-.card p.muted,.body>p.muted{text-transform:none;letter-spacing:0;font-weight:500;font-size:13px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:14px 2px 6px}
-#video{width:100%;border-radius:var(--radius);background:#000;aspect-ratio:3/4;object-fit:cover;box-shadow:var(--shadow)}
-.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.chips button{padding:8px 14px;font-size:14px;border-radius:20px;background:var(--card);box-shadow:var(--shadow)}
-.big{font-size:22px;font-weight:800;letter-spacing:-.3px}
-.pcard{text-align:center}
-.pcard .big{font-size:36px;color:var(--accent)}
-.macros{display:flex;justify-content:center;gap:16px;font-size:14px;color:var(--muted);margin-top:6px}
-.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
-.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 14px);transform:translateX(-50%);background:var(--text);color:var(--bg);font-weight:600;padding:11px 18px;border-radius:20px;z-index:50;display:none;box-shadow:var(--shadow)}
-a{color:var(--accent)}
+.tabs{display:flex;gap:18px;margin:14px 0 0;border-bottom:1px solid var(--hair)}
+.tabs button{padding:8px 0;border-radius:0;font-size:15px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--ink)}
+p.muted{margin:22px 0 0}
+.muted{color:var(--muted);font-size:14px}
+.group{border-bottom:1px solid var(--hair)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px}
+label{display:block;margin:18px 0 0}
+label.chk{display:flex;gap:10px;align-items:center;font-size:15px}
+#video{width:100%;aspect-ratio:3/4;object-fit:cover;background:#000;display:block}
+.viewfinder{position:relative;margin-top:14px}
+.viewfinder:before,.viewfinder:after,.viewfinder i:before,.viewfinder i:after{content:"";position:absolute;width:34px;height:34px;border:3px solid var(--accent);z-index:1}
+.viewfinder:before{left:12%;top:36%;border-right:0;border-bottom:0}
+.viewfinder:after{right:12%;top:36%;border-left:0;border-bottom:0}
+.viewfinder i:before{left:12%;bottom:36%;border-right:0;border-top:0}
+.viewfinder i:after{right:12%;bottom:36%;border-left:0;border-top:0}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.chips button{padding:7px 12px;font-size:13px;border:1px solid var(--hair)}
+.pnum{display:flex;align-items:baseline;gap:8px;padding:18px 0 4px}
+.pnum .n{font-size:56px;font-weight:600;letter-spacing:-.03em;line-height:1}
+.pmac{display:flex;gap:18px;font-size:13px;color:var(--muted);padding-bottom:14px;border-bottom:1px solid var(--hair)}
+.pmac b{color:var(--ink);font-weight:500}
+.pname{font-size:22px;font-weight:600;letter-spacing:-.01em;margin:16px 0 4px}
+.add-btn{width:100%;margin-top:14px;padding:14px;font-weight:600}
+.block{border-top:3px solid var(--ink);margin-top:28px;padding-top:10px}
+.toast{position:fixed;left:16px;right:16px;max-width:528px;margin:0 auto;top:calc(env(safe-area-inset-top) + 12px);background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:6px;z-index:50;display:none;font-size:15px}
+a{color:var(--ink)}
 </style>
 </head>
 <body>
-<header>
-  <button class="icon" id="prevDay" aria-label="Предыдущий день">‹</button>
-  <h1 id="dayTitle">Сегодня</h1>
-  <button class="icon" id="nextDay" aria-label="Следующий день">›</button>
-  <button class="icon" id="openSettings" aria-label="Настройки">⚙︎</button>
-</header>
+<header><div class="hrow">
+  <div class="htitle"><div class="cap" id="dayDate"></div><h1 id="dayTitle">Сегодня</h1></div>
+  <button class="icon" id="prevDay" aria-label="Предыдущий день"><svg class="i" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <button class="icon" id="nextDay" aria-label="Следующий день"><svg class="i" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
+  <button class="icon" id="openSettings" aria-label="Настройки"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+</div></header>
 <main id="diary"></main>
 <div class="fab">
-  <button id="fabScan">▦ Штрихкод</button>
-  <button class="primary" id="fabAdd">＋ Добавить еду</button>
+  <button class="go" id="fabScan"><svg class="i" viewBox="0 0 24 24"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3M7 8v8M10 8v8M13 8v8M16 8v8"/></svg> Скан</button>
+  <button class="solid" id="fabAdd"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg> Найти еду</button>
 </div>
 
 <!-- Поиск -->
 <section class="sheet" id="searchSheet">
-  <header><button class="icon" data-close>✕</button><h1>Добавить еду</h1><button class="icon" id="scanFromSearch">📷</button></header>
+  <header><div class="hrow"><div class="htitle"><h1>Добавить еду</h1></div><button class="icon" id="scanFromSearch" aria-label="Скан"><svg class="i" viewBox="0 0 24 24"><path d="M3 7V4h3M18 4h3v3M21 17v3h-3M6 20H3v-3M7 8v8M10 8v8M13 8v8M16 8v8"/></svg></button><button class="icon" data-close aria-label="Закрыть"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></header>
   <div class="body">
     <select id="mealSelect"></select>
     <div style="height:8px"></div>
@@ -115,79 +149,78 @@ a{color:var(--accent)}
       <button data-src="mine">Мои</button>
     </div>
     <div id="results"></div>
-    <button class="add-btn" id="newProduct">＋ Создать свой продукт</button>
+    <button class="add-btn line" id="newProduct">＋ Создать свой продукт</button>
   </div>
 </section>
 
 <!-- Порция -->
 <section class="sheet" id="portionSheet">
-  <header><button class="icon" data-close>✕</button><h1>Порция</h1><span style="width:44px"></span></header>
+  <header><div class="hrow"><div class="htitle"><h1>Порция</h1></div><button class="icon" data-close aria-label="Закрыть"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></header>
   <div class="body">
-    <div class="card">
-      <div class="big" id="pName"></div>
-      <div class="muted" id="pPer100"></div>
-    </div>
-    <label>Сколько граммов (мл)</label>
+    <div class="pname" id="pName"></div>
+    <div class="cap" id="pPer100"></div>
+    <div class="pnum"><span class="n mono" id="pKcal"></span><span class="cap">ккал</span></div>
+    <div class="pmac mono" id="pMacros"></div>
+    <label class="cap">Граммы</label>
     <input id="pGrams" type="number" inputmode="decimal" min="0" step="1">
     <div class="chips" id="pChips"></div>
-    <div class="card pcard"><div class="big" id="pKcal"></div><div class="macros" id="pMacros"></div></div>
-    <label>Приём пищи</label>
+    <label class="cap">Приём пищи</label>
     <select id="pMeal"></select>
     <div style="height:12px"></div>
-    <button class="primary add-btn" id="pSave">Добавить</button>
+    <button class="solid add-btn" id="pSave">Добавить</button>
     <button class="danger add-btn" id="pDelete" style="display:none">Удалить запись</button>
   </div>
 </section>
 
 <!-- Свой продукт -->
 <section class="sheet" id="productSheet">
-  <header><button class="icon" data-close>✕</button><h1>Свой продукт</h1><span style="width:44px"></span></header>
+  <header><div class="hrow"><div class="htitle"><h1>Свой продукт</h1></div><button class="icon" data-close aria-label="Закрыть"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></header>
   <div class="body">
-    <label>Название</label><input id="fName">
-    <label>Штрихкод (если есть)</label><input id="fCode" inputmode="numeric">
+    <label class="cap">Название</label><input id="fName">
+    <label class="cap">Штрихкод (если есть)</label><input id="fCode" inputmode="numeric">
     <p class="muted">Пищевая ценность на 100 г — смотрите на упаковке.</p>
     <div class="grid2">
-      <div><label>Ккал</label><input id="fKcal" type="number" inputmode="decimal"></div>
-      <div><label>Белки, г</label><input id="fP" type="number" inputmode="decimal"></div>
-      <div><label>Жиры, г</label><input id="fF" type="number" inputmode="decimal"></div>
-      <div><label>Углеводы, г</label><input id="fC" type="number" inputmode="decimal"></div>
+      <div><label class="cap">Ккал</label><input id="fKcal" type="number" inputmode="decimal"></div>
+      <div><label class="cap">Белки, г</label><input id="fP" type="number" inputmode="decimal"></div>
+      <div><label class="cap">Жиры, г</label><input id="fF" type="number" inputmode="decimal"></div>
+      <div><label class="cap">Углеводы, г</label><input id="fC" type="number" inputmode="decimal"></div>
     </div>
-    <label>Вес порции/упаковки, г (необязательно)</label><input id="fServing" type="number" inputmode="decimal">
-    <label style="display:flex;gap:8px;align-items:center;color:var(--text)"><input type="checkbox" id="fShare" style="width:auto" checked> Отправить в общую базу, чтобы товар нашёлся у всех</label>
+    <label class="cap">Вес порции/упаковки, г (необязательно)</label><input id="fServing" type="number" inputmode="decimal">
+    <label class="chk"><input type="checkbox" id="fShare" style="width:auto" checked> Отправить в общую базу, чтобы товар нашёлся у всех</label>
     <p class="muted" id="fShareHint"></p>
     <div style="height:12px"></div>
-    <button class="primary add-btn" id="fSave">Сохранить</button>
+    <button class="solid add-btn" id="fSave">Сохранить</button>
   </div>
 </section>
 
 <!-- Сканер -->
 <section class="sheet" id="scanSheet">
-  <header><button class="icon" data-close>✕</button><h1>Наведите на штрихкод</h1><span style="width:44px"></span></header>
+  <header><div class="hrow"><div class="htitle"><h1>Наведите на штрихкод</h1></div><button class="icon" data-close aria-label="Закрыть"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></header>
   <div class="body">
-    <video id="video" playsinline muted></video>
+    <div class="viewfinder"><i></i><video id="video" playsinline muted></video></div>
     <p class="muted" id="scanStatus">Запускаю камеру…</p>
-    <label>Или введите цифры вручную</label>
-    <div style="display:flex;gap:8px"><input id="manualCode" inputmode="numeric" placeholder="4600000000000"><button class="primary" id="manualGo">Найти</button></div>
+    <label class="cap">Или введите цифры вручную</label>
+    <div style="display:flex;gap:8px"><input id="manualCode" inputmode="numeric" placeholder="4600000000000"><button class="solid" id="manualGo">Найти</button></div>
   </div>
 </section>
 
 <!-- Настройки -->
 <section class="sheet" id="settingsSheet">
-  <header><button class="icon" data-close>✕</button><h1>Настройки</h1><span style="width:44px"></span></header>
+  <header><div class="hrow"><div class="htitle"><h1>Настройки</h1></div><button class="icon" data-close aria-label="Закрыть"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></header>
   <div class="body">
-    <label>Цель, ккал в день</label><input id="sGoal" type="number" inputmode="numeric">
-    <div class="card">
+    <label class="cap">Цель, ккал в день</label><input id="sGoal" type="number" inputmode="numeric">
+    <div class="block">
       <b>Общая база товаров</b>
       <p class="muted">Новые товары со штрихкодом можно отправлять в Open Food Facts — тогда их увидят все, включая вашу семью. Нужен бесплатный аккаунт: <a href="https://world.openfoodfacts.org/cgi/user.pl" target="_blank" rel="noopener">регистрация</a>.</p>
-      <label>Логин Open Food Facts</label><input id="sOffUser" autocomplete="username">
-      <label>Пароль</label><input id="sOffPass" type="password" autocomplete="current-password">
+      <label class="cap">Логин Open Food Facts</label><input id="sOffUser" autocomplete="username">
+      <label class="cap">Пароль</label><input id="sOffPass" type="password" autocomplete="current-password">
     </div>
-    <button class="primary add-btn" id="sSave">Сохранить</button>
-    <div class="card">
+    <button class="solid add-btn" id="sSave">Сохранить</button>
+    <div class="block">
       <b>Резервная копия</b>
       <p class="muted">Все данные хранятся только на этом телефоне. Сохраните копию, чтобы перенести на другое устройство.</p>
-      <button class="add-btn" id="exportBtn">Скачать копию</button>
-      <button class="add-btn" id="importBtn">Загрузить копию</button>
+      <button class="add-btn line" id="exportBtn">Скачать копию</button>
+      <button class="add-btn line" id="importBtn">Загрузить копию</button>
       <input type="file" id="importFile" accept="application/json" hidden>
     </div>
     <p class="muted">Данные о товарах по штрихкоду — <a href="https://ru.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> (ODbL). Если товара нет, создайте его — он запомнится.</p>
