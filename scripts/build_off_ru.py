@@ -90,4 +90,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:  # чтобы причина была видна в аннотациях GitHub Actions
+        print(f"::error::{type(e).__name__}: {str(e)[:900]}")
+        raise
