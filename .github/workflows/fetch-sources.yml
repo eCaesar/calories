@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: pip install -q xlrd && python3 scripts/fetch_usda.py
+      - run: pip install -q duckdb && python3 scripts/fetch_usda.py
       - name: Сохранить в ветку sources
         run: |
           cd sources
