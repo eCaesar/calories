@@ -6,7 +6,7 @@ RUN apk add --no-cache ca-certificates unzip wget \
  && wget -q "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_${TARGETARCH}.zip" -O /tmp/pb.zip \
  && unzip -q /tmp/pb.zip -d /pb && rm /tmp/pb.zip
 COPY server/pb_migrations /pb/pb_migrations
-COPY index.html app.js sync.js foods.js foods-extra.js foods-dishes.js manifest.json sw.js icon.svg icon-192.png icon-512.png /pb/pb_public/
+COPY index.html app.js sync.js foods.js foods-extra.js foods-dishes.js foods-usda.js manifest.json sw.js icon.svg icon-192.png icon-512.png /pb/pb_public/
 COPY fonts /pb/pb_public/fonts
 # Готовая выгрузка магазинных товаров из публикации на GitHub (если недоступна — приложение ищет онлайн)
 RUN mkdir -p /pb/pb_public/data \

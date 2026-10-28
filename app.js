@@ -129,7 +129,12 @@ $('nextDay').onclick = () => { day = shiftDay(day, 1); renderDiary(); pullSoon(d
 
 // ---------- Поиск ----------
 const baseFoods = BASE_FOODS.concat(typeof EXTRA_FOODS !== 'undefined' ? EXTRA_FOODS : [], typeof DISH_FOODS !== 'undefined' ? DISH_FOODS : [])
-  .map(([name, kcal, p, f, c, alias]) => ({ key: 'b:' + name, src: 'base', name, kcal, p, f, c, hay: norm(name + ' ' + (alias || '').replace(/\|/g, ' ')).replace(/-/g, ' ') }));
+  .map((r) => baseFood(r, 0))
+  .concat(typeof USDA_FOODS !== 'undefined' ? USDA_FOODS.map((r) => baseFood(r, 1)) : []);
+// tier 1 (переведённая база USDA) показываем после своих справочников
+function baseFood([name, kcal, p, f, c, alias], tier) {
+  return { key: 'b:' + name, src: 'base', tier, name, kcal, p, f, c, hay: norm(name + ' ' + (alias || '').replace(/\|/g, ' ')).replace(/-/g, ' ') };
+}
 let srcFilter = 'all';
 let offSeq = 0;
 
@@ -178,7 +183,7 @@ function matchLocal(list, q) {
   const tests = words.map(wordMatcher);
   return list
     .filter((f) => { const n = f.hay || norm(f.name + ' ' + (f.brand || '')); return tests.every((t) => t(n)); })
-    .sort((a, b) => rank(a.name, words[0]) - rank(b.name, words[0]) || a.name.length - b.name.length);
+    .sort((a, b) => rank(a.name, words[0]) - rank(b.name, words[0]) || (a.tier || 0) - (b.tier || 0) || a.name.length - b.name.length);
 }
 function resultRow(f) {
   const tag = f.src === 'mine' ? ' · мой' : '';
