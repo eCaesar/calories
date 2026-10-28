@@ -11,6 +11,7 @@ import csv
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from collections import defaultdict
@@ -50,6 +51,7 @@ def main():
             st["added"] += 1
     # Крупные файлы дробим по следующей цифре, чтобы на телефон шло не больше ~100 КБ.
     # Список раздробленных префиксов — в data/bc/split.json.
+    shutil.rmtree("data/bc", ignore_errors=True)
     os.makedirs("data/bc", exist_ok=True)
     split, files = [], 0
     todo = list(shards.items())
