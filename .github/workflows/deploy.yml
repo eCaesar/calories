@@ -41,7 +41,7 @@ jobs:
       - name: Подготовить сайт
         run: |
           mkdir -p _site/data
-          cp -r index.html app.js sync.js foods.js foods-extra.js manifest.json sw.js icon.svg icon-192.png icon-512.png fonts _site/
+          cp -r index.html app.js sync.js foods.js foods-extra.js foods-dishes.js manifest.json sw.js icon.svg icon-192.png icon-512.png fonts _site/
           cp data/off-ru.json data/stats.json _site/data/ 2>/dev/null || cp data/off-ru.json _site/data/
 
       - name: Опубликовать в ветку gh-pages

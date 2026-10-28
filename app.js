@@ -128,7 +128,8 @@ $('prevDay').onclick = () => { day = shiftDay(day, -1); renderDiary(); pullSoon(
 $('nextDay').onclick = () => { day = shiftDay(day, 1); renderDiary(); pullSoon(day, day); };
 
 // ---------- Поиск ----------
-const baseFoods = BASE_FOODS.concat(typeof EXTRA_FOODS !== 'undefined' ? EXTRA_FOODS : []).map(([name, kcal, p, f, c]) => ({ key: 'b:' + name, src: 'base', name, kcal, p, f, c }));
+const baseFoods = BASE_FOODS.concat(typeof EXTRA_FOODS !== 'undefined' ? EXTRA_FOODS : [], typeof DISH_FOODS !== 'undefined' ? DISH_FOODS : [])
+  .map(([name, kcal, p, f, c, alias]) => ({ key: 'b:' + name, src: 'base', name, kcal, p, f, c, hay: norm(name + ' ' + (alias || '').replace(/\|/g, ' ')).replace(/-/g, ' ') }));
 let srcFilter = 'all';
 let offSeq = 0;
 
@@ -156,12 +157,28 @@ function rank(name, w) {
   if (new RegExp('(^|[\\s,(«"-])' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(n)) return 1;
   return 2;
 }
+// Слово запроса совпадает целиком или по основе: «творожную» найдёт «творожная», «роллы» — «ролл»
+// Разговорные и альтернативные названия: основа слова → основы, которые ищем вместо неё
+const SYNONYMS = {
+  картошк: ['картофел'], картофел: ['картошк'], селедк: ['сельд'], сельд: ['селедк'], курочк: ['куриц', 'курин'],
+  куриц: ['курин'], курин: ['куриц'], макарош: ['макарон'], шаверм: ['шаурм'], шаурм: ['шаверм'], чебурек: ['чебурек'],
+  гречк: ['гречн'], гречн: ['гречк'], свинин: ['свин'], говядин: ['говяж'], говяж: ['говядин'], яичниц: ['глазунь'],
+  глазунь: ['яичниц'], пюрешк: ['пюре'], котлетк: ['котлет'], блинчик: ['блин'], оладушк: ['олад'], сосиск: ['сосиск'],
+  кофе: ['кофе', 'капучино', 'латте', 'американо'], ролл: ['ролл', 'рол'], суши: ['суши', 'нигири'], бургер: ['бургер', 'гамбургер'],
+};
+function wordMatcher(w) {
+  const stem = w.length >= 5 ? w.slice(0, -2) : w.length === 4 ? w.slice(0, -1) : w;
+  const alts = [w, stem];
+  for (const [k, v] of Object.entries(SYNONYMS)) if (w.startsWith(k)) alts.push(...v);
+  return (hay) => alts.some((x) => hay.includes(x));
+}
 function matchLocal(list, q) {
-  const words = norm(q).split(/\s+/).filter(Boolean);
+  const words = norm(q).replace(/[-,.()«»"]/g, ' ').split(/\s+/).filter(Boolean);
   if (!words.length) return list;
+  const tests = words.map(wordMatcher);
   return list
-    .filter((f) => { const n = norm(f.name + ' ' + (f.brand || '')); return words.every((w) => n.includes(w)); })
-    .sort((a, b) => rank(a.name, words[0]) - rank(b.name, words[0]));
+    .filter((f) => { const n = f.hay || norm(f.name + ' ' + (f.brand || '')); return tests.every((t) => t(n)); })
+    .sort((a, b) => rank(a.name, words[0]) - rank(b.name, words[0]) || a.name.length - b.name.length);
 }
 function resultRow(f) {
   const tag = f.src === 'mine' ? ' · мой' : '';
