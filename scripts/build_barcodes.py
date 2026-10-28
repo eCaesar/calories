@@ -4,7 +4,7 @@
 с калориями. По такому коду приложение узнаёт название, подбирает похожее блюдо
 из справочника и просит проверить цифры по упаковке.
 
-Результат: data/bc/<первые 5 цифр>.json = {код: [название, бренд, категория]}
+Результат: data/bc/<первые 5–9 цифр>.json = {код: [название, бренд, категория]}
 и data/bc-stats.json. Запуск после build_off_ru.py: python scripts/build_barcodes.py
 """
 import csv
@@ -48,11 +48,27 @@ def main():
             leaf = cat.replace(" (folder)", "").split("/")[-1] if food else ""
             shards[code[:5]][code] = [name[:120], brand[:40], leaf[:40]]
             st["added"] += 1
+    # Крупные файлы дробим по следующей цифре, чтобы на телефон шло не больше ~100 КБ.
+    # Список раздробленных префиксов — в data/bc/split.json.
     os.makedirs("data/bc", exist_ok=True)
-    for k, v in shards.items():
+    split, files = [], 0
+    todo = list(shards.items())
+    while todo:
+        k, v = todo.pop()
+        body = json.dumps(v, ensure_ascii=False, separators=(",", ":"))
+        if len(body.encode()) > 100_000 and len(k) < 9:
+            split.append(k)
+            sub = defaultdict(dict)
+            for code, row in v.items():
+                sub[code[:len(k) + 1]][code] = row
+            todo.extend(sub.items())
+            continue
         with open(f"data/bc/{k}.json", "w", encoding="utf-8") as fh:
-            json.dump(v, fh, ensure_ascii=False, separators=(",", ":"))
-    st["files"] = len(shards)
+            fh.write(body)
+        files += 1
+    json.dump(sorted(split), open("data/bc/split.json", "w"), separators=(",", ":"))
+    st["files"] = files
+    st["split"] = len(split)
     json.dump(st, open("data/bc-stats.json", "w"), ensure_ascii=False)
     print(f"::notice::Штрихкоды Universe-HTT: {json.dumps(st, ensure_ascii=False)}")
 

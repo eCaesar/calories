@@ -322,12 +322,16 @@ async function lookupBarcode(code) {
   openProductForm({ code });
 }
 
-// Справочник штрихкодов без КБЖУ (Universe-HTT), разложен по первым 5 цифрам кода
+// Справочник штрихкодов без КБЖУ (Universe-HTT), разложен по первым 5+ цифрам кода (крупные префиксы раздроблены, см. split.json)
 const BC_HOSTS = ['data/bc/', 'https://ecaesar.github.io/calories/data/bc/'];
+let bcSplit = null;
 async function lookupBarcodeRef(code) {
   for (const host of BC_HOSTS) {
     try {
-      const res = await fetch(host + code.slice(0, 5) + '.json');
+      if (!bcSplit) bcSplit = new Set(await (await fetch(host + 'split.json')).json());
+      let n = 5;
+      while (bcSplit.has(code.slice(0, n)) && n < code.length) n++;
+      const res = await fetch(host + code.slice(0, n) + '.json');
       if (!res.ok) continue;
       const row = (await res.json())[code];
       return row ? { name: row[0], brand: row[1], cat: row[2] } : null;
