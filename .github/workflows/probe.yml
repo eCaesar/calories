@@ -1,0 +1,12 @@
+name: Разведка источников
+on: workflow_dispatch
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for q in usda fooddata fndds "sr legacy" ciqual nutrition; do
+            r=$(curl -s "https://huggingface.co/api/datasets?search=$(echo $q | sed 's/ /%20/g')&limit=15" | jq -r '.[].id' | tr '\n' ' ')
+            echo "::notice::$q: $r"
+          done
+          echo "::notice::usda dns: $(getent hosts fdc.nal.usda.gov || echo none) api: $(curl -s -o /dev/null -w '%{http_code}' https://api.nal.usda.gov/fdc/v1/foods/list?api_key=DEMO_KEY)"
