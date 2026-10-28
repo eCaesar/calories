@@ -5,7 +5,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          for d in yvfu/FoodData_Central_csv_2025-04-24 french-open-data/table-de-composition-nutritionnelle-des-aliments-ciqual-2020 tramzel/fndds; do
-            r=$(curl -s "https://huggingface.co/api/datasets/$d/tree/main?recursive=true" | jq -r '.[] | select(.type=="file") | "\(.path):\(.size)"' | head -60 | tr '\n' ' ')
-            echo "::notice::$d => $r"
-          done
+          R=papyrussolution/UhttBarcodeReference
+          echo "::notice::releases: $(curl -s https://api.github.com/repos/$R/releases | jq -c '[.[] | {tag:.tag_name, date:.published_at, a:[.assets[]|{n:.name,s:.size}]}][:3]')"
+          curl -sL https://raw.githubusercontent.com/$R/master/uhtt_barcode_ref_stat.txt | head -c 1500 | tr '\n' ' ' | sed 's/^/::notice::stat: /'; echo
+          url=$(curl -s https://api.github.com/repos/$R/releases/latest | jq -r '.assets[0].browser_download_url')
+          curl -sL -o b.7z "$url" && 7z x -y b.7z >/dev/null && ls -la
+          f=$(ls *.csv *.txt 2>/dev/null | grep -v stat | head -1); echo "::notice::file $f lines $(wc -l < "$f")"
+          head -3 "$f" | tr '\t' '|' | sed 's/^/::notice::row: /'
+          echo "::notice::ru46x: $(cut -f2 "$f" | grep -c '^46[0-9]') by481: $(cut -f2 "$f" | grep -c '^481') kz487: $(cut -f2 "$f" | grep -c '^487')"
+          cut -f2,5 "$f" | grep '^46' | cut -f2 | sort | uniq -c | sort -rn | head -40 | tr '\n' ';' | sed 's/^/::notice::cats: /'; echo
