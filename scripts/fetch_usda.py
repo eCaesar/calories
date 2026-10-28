@@ -50,8 +50,45 @@ def extract(url):
     return out
 
 
+CIQUAL = "https://ciqual.anses.fr/cms/sites/default/files/inline-files/Table%20Ciqual%202020_ENG_2020%2007%2007.xls"
+
+
+def num(v):
+    v = str(v or "").replace(",", ".").replace("<", "").strip()
+    try:
+        return float(v)
+    except ValueError:
+        return 0.0 if v.lower() == "traces" else None
+
+
+def ciqual():
+    """CIQUAL (ANSES, Франция): открытая лицензия Etalab, около 3 тыс. продуктов и блюд."""
+    import xlrd
+    sheet = xlrd.open_workbook(file_contents=get(CIQUAL)).sheet_by_index(0)
+    head = [str(h) for h in sheet.row_values(0)]
+    col = lambda part: next(i for i, h in enumerate(head) if part in h)
+    i_name, i_kcal = col("alim_nom_eng"), col("(kcal/100g)")
+    i_p, i_f, i_c = col("Protein"), col("Fat (g/100g)"), col("Carbohydrate (g/100g)")
+    out = []
+    for r in range(1, sheet.nrows):
+        row = sheet.row_values(r)
+        kcal = num(row[i_kcal])
+        if kcal is None or not row[i_name]:
+            continue
+        out.append([int(num(row[0]) or r), str(row[i_name]).strip(), round(kcal),
+                    round(num(row[i_p]) or 0, 1), round(num(row[i_f]) or 0, 1), round(num(row[i_c]) or 0, 1)])
+    return out
+
+
 def main():
     os.makedirs("sources", exist_ok=True)
+    try:
+        rows = ciqual()
+        with open("sources/ciqual.json", "w", encoding="utf-8") as fh:
+            json.dump(rows, fh, ensure_ascii=False, separators=(",", ":"))
+        print(f"::notice::ciqual.json: {len(rows)} строк")
+    except Exception as e:
+        print(f"::error::ciqual: {type(e).__name__}: {str(e)[:400]}")
     for kind, file in (("sr_legacy_food", "usda-sr.json"), ("survey_food", "usda-fndds.json"), ("foundation_food", "usda-foundation.json")):
         try:
             url = find(kind)
