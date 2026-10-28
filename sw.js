@@ -1,5 +1,5 @@
 // Кэш оболочки приложения: работает без сети, запросы к базе товаров идут в сеть
-const CACHE = 'kalorii-v11';
+const CACHE = 'kalorii-v12';
 const SHELL = ['./', 'index.html', 'app.js', 'sync.js', 'foods.js', 'foods-extra.js', 'foods-dishes.js', 'foods-usda.js', 'manifest.json', 'icon.svg', 'icon-192.png', 'fonts/onest-cyrillic-400-normal.woff2', 'fonts/onest-cyrillic-500-normal.woff2', 'fonts/onest-cyrillic-600-normal.woff2', 'fonts/onest-cyrillic-700-normal.woff2', 'fonts/onest-latin-400-normal.woff2', 'fonts/onest-latin-600-normal.woff2'];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

@@ -38,11 +38,21 @@ jobs:
           python3 scripts/build_off_ru.py
           ls -lh data/
 
+      - name: Кэш справочника штрихкодов
+        uses: actions/cache@v4
+        with:
+          path: uhtt/
+          key: uhtt-20230913
+
+      - name: Справочник штрихкодов (Universe-HTT)
+        run: python3 scripts/build_barcodes.py
+
       - name: Подготовить сайт
         run: |
           mkdir -p _site/data
           cp -r index.html app.js sync.js foods.js foods-extra.js foods-dishes.js foods-usda.js manifest.json sw.js icon.svg icon-192.png icon-512.png fonts _site/
           cp data/off-ru.json data/stats.json _site/data/ 2>/dev/null || cp data/off-ru.json _site/data/
+          cp -r data/bc data/bc-stats.json _site/data/
 
       - name: Опубликовать в ветку gh-pages
         run: |

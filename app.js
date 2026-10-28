@@ -312,8 +312,47 @@ async function lookupBarcode(code) {
   } catch {
     toast('Нет связи с базой товаров');
   }
+  const known = await lookupBarcodeRef(code);
+  if (known) {
+    const guess = guessFood(known);
+    toast(guess ? 'Нашёл название, цифры подставил примерно — сверьте с упаковкой' : 'Нашёл название — перепишите калории с упаковки один раз');
+    return openProductForm({ code, name: known.name, guess });
+  }
   toast('Товар не найден — заполните его один раз');
   openProductForm({ code });
+}
+
+// Справочник штрихкодов без КБЖУ (Universe-HTT), разложен по первым 5 цифрам кода
+const BC_HOSTS = ['data/bc/', 'https://ecaesar.github.io/calories/data/bc/'];
+async function lookupBarcodeRef(code) {
+  for (const host of BC_HOSTS) {
+    try {
+      const res = await fetch(host + code.slice(0, 5) + '.json');
+      if (!res.ok) continue;
+      const row = (await res.json())[code];
+      return row ? { name: row[0], brand: row[1], cat: row[2] } : null;
+    } catch {}
+  }
+  return null;
+}
+
+// Похожее блюдо из справочника по словам названия и категории: «Молоко Простоквашино 3,2% 930мл» → «Молоко 3,2%»
+function guessFood({ name, brand, cat }) {
+  const skip = norm(brand || '');
+  const words = norm(name).replace(/[^а-я0-9%,. ]/g, ' ').split(/\s+/)
+    .filter((w) => /[а-я]{3,}/.test(w) && !skip.includes(w) && !/^(\d|гр?$|мл$|кг$|шт$)/.test(w));
+  const fat = (name.match(/(\d+[,.]?\d*)\s*%/) || [])[1];
+  const tries = [];
+  for (let n = Math.min(3, words.length); n >= 1; n--) {
+    if (fat) tries.push(words.slice(0, n).concat(fat.replace('.', ',') + '%').join(' '));
+    tries.push(words.slice(0, n).join(' '));
+  }
+  if (cat) tries.push(cat);
+  for (const q of tries) {
+    const hit = matchLocal(baseFoods, q)[0];
+    if (hit) return hit;
+  }
+  return null;
 }
 
 // Отправка нового товара в Open Food Facts: ответ не читаем (CORS), товар уже сохранён локально
@@ -398,6 +437,10 @@ function openProductForm(pref = {}) {
   $('fName').value = pref.name || $('q').value || '';
   $('fCode').value = pref.code || '';
   ['fKcal', 'fP', 'fF', 'fC', 'fServing'].forEach((id) => ($(id).value = ''));
+  const g = pref.guess;
+  if (g) [['fKcal', g.kcal], ['fP', g.p], ['fF', g.f], ['fC', g.c]].forEach(([id, v]) => ($(id).value = v));
+  $('fGuess').textContent = g ? `Цифры взяты примерно, как у «${g.name}». Сверьте с упаковкой.` : '';
+  $('fGuess').hidden = !g;
   $('fShareHint').textContent = Sync.loggedIn() || settings.offUser ? '' : 'Чтобы продукт увидели все, войдите в аккаунт в настройках. Пока он сохранится только у вас.';
   openSheet('productSheet');
 }
